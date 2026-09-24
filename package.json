@@ -1,0 +1,36 @@
+{
+  "name": "zenki",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "shot": "node scripts/shot.mjs",
+    "plate": "node scripts/plate.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/nunito": "^5.3.0",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "lucide-react": "^1.47.0",
+    "maath": "^0.10.8",
+    "react": "~19.2.0",
+    "react-dom": "~19.2.0",
+    "simplex-noise": "^4.0.3",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "~19.2.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "meshoptimizer": "^1.1.1",
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.4",
+    "typescript": "~5.9.2",
+    "vite": "^8.3.0"
+  }
+}

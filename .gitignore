@@ -1,0 +1,16 @@
+node_modules/
+dist/
+shots/
+*.local
+.DS_Store
+# personal data never enters the repo
+*photos*/
+private/
+# the repo is public: reference images stay local — colleagues' 2D designs, ZenDS and
+# brand exports, mascot renders, concept renders (the generated sources are in src/)
+docs/**/*.png
+docs/**/*.jpg
+docs/**/*.svg
+docs/set/plate/
+# img2threejs working state and vendor GLBs
+img2/
