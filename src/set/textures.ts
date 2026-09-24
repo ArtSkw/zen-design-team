@@ -115,7 +115,7 @@ export function logoTexture(): Promise<CanvasTexture> {
       resolve(t)
     }
     img.onerror = reject
-    img.src = '/set/zen-logo.svg'
+    img.src = `${import.meta.env.BASE_URL}set/zen-logo.svg`
   })
   return logoPromise
 }
@@ -126,7 +126,7 @@ export function posterTexture(onLoad?: () => void) {
     onLoad?.()
     return poster
   }
-  poster = new TextureLoader().load('/set/poster.jpg', () => onLoad?.())
+  poster = new TextureLoader().load(`${import.meta.env.BASE_URL}set/poster.jpg`, () => onLoad?.())
   poster.colorSpace = SRGBColorSpace
   poster.anisotropy = 8
   return poster

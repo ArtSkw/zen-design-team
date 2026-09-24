@@ -22,8 +22,11 @@ const csp: Plugin = {
   transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CSP }, injectTo: 'head-prepend' }],
 }
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
+  // GitHub Pages serves the build from https://artskw.github.io/zen-design-team/
+  // (`vite preview` mirrors it); the dev server stays at the root
+  base: command === 'build' || isPreview ? '/zen-design-team/' : '/',
   plugins: [react(), csp],
   server: { host: '127.0.0.1', port: 5173 },
   preview: { host: '127.0.0.1', port: 4173 },
-})
+}))

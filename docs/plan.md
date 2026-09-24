@@ -444,9 +444,23 @@
 > forearms shorter and rounder (the fist close under the elbow), and `ArmSpec.scale` 1.12
 > grows both parts and the elbow pivot about the shoulder (shoulder moved out to −1.03).
 >
+> **Round 23 (2026-09-24) — into the repo, live on GitHub Pages.** The project is a git
+> repo pushed to the public `ArtSkw/zen-design-team`; `.github/workflows/deploy.yml` builds
+> and publishes every push to `main` to https://artskw.github.io/zen-design-team/ (Vite
+> `base` is `/zen-design-team/` for build and preview; the dev server stays at `/`; asset
+> URLs go through `import.meta.env.BASE_URL`). The repo is public, so `docs/**/*.png|jpg|svg`
+> (designs, DS and brand exports, renders) and `img2/` are git-ignored; the generated
+> sources they feed are committed. Security pass: `npm audit` clean, no secrets in the
+> tree; the build carries a same-origin Content-Security-Policy; the lab's `?glb=` loader is
+> dev-only (it accepted `//host/x.glb`). Clean-up: the Scene is a lazy chunk, so the first
+> chunk is 79 KB gz and the loader paints about 0.1 s after navigation; the 3D follows as
+> three.core 101 KB and Scene 191 KB. `public/plate/` (unused since the diorama) moved to
+> `docs/set/plate/` (local); dead helpers, `maath`, the plate scripts and the dangling
+> `og:image` removed. The OpenGraph image is still a v1.0 item (it needs an absolute URL).
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
 > designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters and all quotes pending; JS
-> bundle ~26 KB over budget.
+> JS ≈ 380 KB gz in all (first chunk 79 KB), ~30 KB over the 350 budget in sum.
 
 ---
 

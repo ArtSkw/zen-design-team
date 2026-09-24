@@ -205,7 +205,10 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
 
 1. **Title and URL** — title DECIDED 2026-09-23: **ZEN Design Team** ("Zenki" was the
    working title; it survives only as the repo folder). The unlisted URL is Artur's call
-   at v1.0.
+   at v1.0. **Test hosting 2026-09-24:** GitHub Pages from the public repo
+   `ArtSkw/zen-design-team`, rebuilt on every push to `main`:
+   https://artskw.github.io/zen-design-team/ (`noindex`). Reference images stay out of the
+   public repo.
 2. **Language of the quotes** — Polish, English or mixed; affects the font
    subset and bubble widths. Decide before Phase 5.
 3. **Where Artur sits** — host in the middle, or the one peeking in from the
