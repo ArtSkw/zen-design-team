@@ -1,5 +1,5 @@
 import { TEAM } from '../cast/team'
-import { store } from '../lib/store'
+import { say } from '../lib/talk'
 
 // Keyboard and screen-reader path: one button per Zenek, in seat order.
 export function A11yList() {
@@ -8,7 +8,7 @@ export function A11yList() {
     <ul className="sr-only" aria-label="Zespół">
       {ordered.map((m) => (
         <li key={m.id}>
-          <button type="button" onClick={() => store.set({ active: store.get().active === m.id ? null : m.id })}>
+          <button type="button" onClick={() => say(m.id)}>
             {m.name}
           </button>
         </li>

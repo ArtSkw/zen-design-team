@@ -525,8 +525,32 @@
 > pitfall: a git worktree with symlinked node_modules serves no fonts in dev (outside
 > `server.fs.allow`) — compare against the built live site instead.
 >
+> **Round 27 (2026-09-24) — lines, as in an RPG.** Artur's direction: a tap shows a line
+> that stays up only as long as it takes to read, then goes by itself with a soft
+> animation; each Zenek has four lines, and further taps go through them in order. A tap
+> on another Zenek still sends the open bubble away. Artur's 56 lines (Polish) live in
+> `src/cast/lines.ts` (keyed by id; `Member.quote` is gone). `src/lib/talk.ts`: `say(id)`
+> says the Zenek's next line (each remembers its place, wrapping after the last) and
+> starts the reading timer, `readMs = clamp(1600 + 60 ms × characters, 3000, 7500)`;
+> `hush()` (timer, Esc, a tap on empty space) clears `active`. The store gained `line` and
+> `said` (a counter, so the same Zenek's next line re-renders). `Bubble.tsx` keeps a list
+> of bubbles so the one leaving can finish while the next one arrives; the projector
+> moves every bubble in `bubbles` (still a transform only). Motions: the next line changes
+> the words in place (bubble breath 0.96 → 1 in 280 ms via WAAPI, words rise 3 px in
+> 260 ms); read → the words fade (200 ms), then the bubble draws back into the tail
+> (scale 0.88, blur 2 px, 380 ms after 100 ms); another Zenek takes the floor → 160 ms out;
+> reduced motion → fades only. A tap on the bubble also says the next line. Typesetting:
+> one-letter words (a, i, o, u, w, z) are tied to the next word with a no-break space;
+> a wrapped bubble is narrowed to its longest balanced line (measured once per line —
+> before, a two-line bubble kept the full 300 px with an empty band at the right). The
+> live region is now a hidden `aria-live` paragraph ("Name: line"); the visual bubbles are
+> `aria-hidden`. Łukasz D. is shown as "Łukasz Dz.", as in Artur's list. Tools:
+> `scripts/debug-lines.mjs [reduce]` (timeline of taps, timeouts, exits),
+> `scripts/lines-sheet.mjs [phone]` (every line in its bubble → `shots/lines-*.png`),
+> `scripts/debug-bubble-anim.mjs` (the motions scrubbed frame by frame).
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
-> designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters and all quotes pending; JS
+> designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters pending; JS
 > JS ≈ 383 KB gz in all (first chunk 82 KB), ~33 KB over the 350 budget in sum.
 
 ---
@@ -853,7 +877,9 @@ Goal: every Zenek speaks, beautifully, on every screen.
   16 px.
 - Behaviour: one open at a time; spring scale-in from the tail origin
   (320 ms); closes on outside tap, another Zenek, or Esc; near an edge the tail
-  flips and the bubble clamps inside the stage.
+  flips and the bubble clamps inside the stage. **Superseded 2026-09-24 (Round 27,
+  owner-directed):** four lines per Zenek said in turn, each up for its reading time
+  and then gone by itself — see the Round 27 note.
 - Gaze: while a bubble is open, Zeneks within about two seats look at the
   speaker; the speaker looks at the camera.
 - Access: a visually-hidden `<button>` per Zenek (`aria-label = name`), Tab

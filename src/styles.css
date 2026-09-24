@@ -114,8 +114,15 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
   font-size: 16px;
   line-height: 1.4;
   font-weight: 600;
+  cursor: pointer; /* a tap on it says the next line too */
   animation: bubble-in 200ms var(--ease-out) both;
 }
+/* read: the words go first, then the bubble draws back into the speaker, softly */
+.bubble--out { pointer-events: none; animation: bubble-out 380ms cubic-bezier(0.65, 0, 0.35, 1) 100ms both; }
+.bubble--out .bubble__quote { animation: quote-out 200ms ease-in both; }
+/* another Zenek took the floor: out of the way, quickly */
+.bubble--quick { animation: bubble-out 160ms var(--ease-out) both; }
+.bubble--quick .bubble__quote { animation: none; }
 .bubble::after {
   content: '';
   position: absolute;
@@ -153,13 +160,27 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
   transition-duration: 160ms;
 }
 .bubble__quote { margin: 0; text-wrap: balance; }
-.bubble__quote--placeholder { color: var(--ink-soft); font-weight: 500; font-style: italic; }
+/* the next line: its words rise into place as the bubble breathes (Bubble) */
+.bubble__quote--next { animation: quote-in 260ms var(--ease-out) both; }
 @keyframes bubble-in {
   from { opacity: 0; transform: translate(-50%, -100%) scale(0.95); }
   to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
 }
+@keyframes bubble-out {
+  from { opacity: 1; transform: translate(-50%, -100%) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: translate(-50%, -100%) scale(0.88); filter: blur(2px); }
+}
+@keyframes quote-in {
+  from { opacity: 0; transform: translateY(3px); }
+}
+@keyframes quote-out {
+  to { opacity: 0; }
+}
 @keyframes fade-in {
   from { opacity: 0; }
+}
+@keyframes fade-out {
+  to { opacity: 0; }
 }
 
 /* ---- loader: the design-system mark, spun, then completed ------------------- */
@@ -270,6 +291,9 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
 /* reduced motion: fewer, gentler — fades stay, movement and scale go */
 @media (prefers-reduced-motion: reduce) {
   .bubble { animation-name: fade-in; }
+  .bubble.bubble--out { animation: fade-out 240ms ease-out both; }
+  .bubble__quote--next { animation-name: fade-in; }
+  .bubble--out .bubble__quote { animation: none; }
   .dsl { animation-duration: 1ms; }
   .nametag, .nametag--on { transform: translate(-50%, -100%); }
   html[data-phase='loading'] .vc__group { transform: none; }

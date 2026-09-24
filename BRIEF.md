@@ -84,10 +84,13 @@ machine and are never committed; only the derived Zenek character sheets are.
    slowly, to look at whoever is approaching. Hover lifts one a hair and shows
    the name. Nothing else moves.
 3. **The voice.** Tap a Zenek: it boings once and a speech bubble pops from
-   above its head with the quote alone; the name lives on hover. One
-   bubble open at a time; tap elsewhere, tap another Zenek, or press Esc to
-   close. Nearby Zeneks glance toward whoever is speaking; the speaker talks with
-   its hands.
+   above its head with one line alone; the name lives on hover. Each Zenek has
+   four lines, said in turn as in an RPG: a tap says the next one, and the
+   bubble stays up only as long as the line takes to read, then goes by itself —
+   the words first, then the bubble drawing back into the speaker (owner-directed
+   2026-09-24). One bubble open at a time: tapping another Zenek sends the open
+   one away; tapping elsewhere or Esc closes it early. Nearby Zeneks glance toward
+   whoever is speaking; the speaker talks with its hands.
 
 No score, no roster, no filters, no menus. Ambient sound is a v1.1 question,
 not a v1.0 feature.
@@ -189,7 +192,7 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
 - **Not a 3D world.** One fixed camera, one photographic set; no orbit, no
   walking, no time-of-day.
 - **Not a template.** Fourteen people, one room, one occasion.
-- **Not a CMS.** Quotes live in one data file edited by hand.
+- **Not a CMS.** Lines live in one data file edited by hand.
 
 ## Roadmap
 
@@ -209,8 +212,8 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
    `ArtSkw/zen-design-team`, rebuilt on every push to `main`:
    https://artskw.github.io/zen-design-team/ (`noindex`). Reference images stay out of the
    public repo.
-2. **Language of the quotes** — Polish, English or mixed; affects the font
-   subset and bubble widths. Decide before Phase 5.
+2. **Language of the quotes** — DECIDED 2026-09-24: **Polish**, four lines per person,
+   written by Artur (`src/cast/lines.ts`).
 3. **Where Artur sits** — host in the middle, or the one peeking in from the
    edge, arriving last.
 4. **Names in bubbles** — recommended yes, so the "which one is me" guessing

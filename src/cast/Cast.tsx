@@ -3,7 +3,7 @@ import type { Group } from 'three'
 import { ENTRANCE_ORDER, TEAM, type Member } from './team'
 import { Zenek, useZenekRefs } from '../zenek/Zenek'
 import { headRegistry, useMirror, useZenekMotion } from '../zenek/motion'
-import { store } from '../lib/store'
+import { say } from '../lib/talk'
 import { DEBUG, P } from '../lib/params'
 import { notInWater } from '../set/Reflector'
 
@@ -25,7 +25,7 @@ function Seated({ member, order }: { member: Member; order: number }) {
   }, [member.id, refs.head])
 
   const onTap = () => {
-    store.set({ active: store.get().active === member.id ? null : member.id })
+    say(member.id)
     motion.tap()
   }
 

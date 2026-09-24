@@ -10,6 +10,7 @@ import { TITLE_MS, WRITTEN_MS } from './ui/TitleCard'
 import { TEAM } from './cast/team'
 import { store, type State } from './lib/store'
 import { DEBUG } from './lib/params'
+import { hush } from './lib/talk'
 
 // The 3D (three.js, R3F, the set, the cast) is its own chunk: the loader paints as
 // soon as the small first chunk has run, while the rest streams in behind it.
@@ -97,7 +98,7 @@ function useBoot() {
     })
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') store.set({ active: null })
+      if (e.key === 'Escape') hush()
     }
     window.addEventListener('keydown', onKey)
     return () => {

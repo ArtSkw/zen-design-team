@@ -6,6 +6,7 @@ import { ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping, NoToneMappin
 import cam from '../stage/camera.json'
 import { DEBUG, LITE, P } from '../lib/params'
 import { store, useStore } from '../lib/store'
+import { hush } from '../lib/talk'
 import { clamp, damp, easeOutCubic } from '../lib/anim'
 import { Lighting } from './Lighting'
 import { Diorama } from '../set/Diorama'
@@ -13,7 +14,7 @@ import { Environment, FOG } from '../set/Environment'
 import { Cast } from '../cast/Cast'
 import { headRegistry } from '../zenek/motion'
 import { ZR } from '../zenek/proportions'
-import { bubbleEl } from '../ui/Bubble'
+import { bubbles } from '../ui/Bubble'
 import { nameEl } from '../ui/NameTag'
 import { HOME, LIMITS, view, type Spherical } from './view'
 
@@ -113,7 +114,7 @@ function OrbitRig() {
 
 const _v = new Vector3()
 
-// Pins the speech bubble above the speaker, and the name tag above the hovered Zenek.
+// Pins each speech bubble above its speaker, and the name tag above the hovered Zenek.
 // Moves the bubble and the name tag with the heads they belong to: a transform on each
 // one's own layer, snapped to device pixels, from sizes measured when they change (reading
 // them here every frame forced a layout and a repaint per frame — costly on phones).
@@ -122,9 +123,8 @@ const snap = (v: number) => Math.round(v * window.devicePixelRatio) / window.dev
 function Projector() {
   useFrame(({ camera, size }) => {
     const S = store.get()
-    const b = bubbleEl
-    if (b.pos && b.box && S.active) {
-      const head = headRegistry.get(S.active)
+    for (const b of bubbles) {
+      const head = headRegistry.get(b.id)
       if (head) {
         _v.setFromMatrixPosition(head.matrixWorld)
         _v.y += ZR * 1.28
@@ -250,7 +250,7 @@ export function Scene() {
           gl.toneMapping = TONE[DEBUG.tone as keyof typeof TONE] ?? NeutralToneMapping
           gl.toneMappingExposure = P.num('exp', 1.0)
         }}
-        onPointerMissed={() => store.set({ active: null })}
+        onPointerMissed={hush}
       >
         <OrbitRig />
         <Lighting />

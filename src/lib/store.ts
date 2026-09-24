@@ -14,7 +14,9 @@ export type State = {
   sculptsReady: boolean     // every baked hair and beard the cast wears is decoded
   firstFrame: boolean
   introClock: number        // three.js clock time at which the entrance wave started
-  active: string | null     // member id with an open bubble
+  active: string | null     // member id with the floor: its bubble is up (src/lib/talk.ts)
+  line: number              // which of its lines it is saying (src/cast/lines.ts)
+  said: number              // counts lines said: each tap says a new one, even from the same Zenek
   hover: string | null
   pointerActiveAt: number   // performance.now() of the last pointer move over the stage
   reducedMotion: boolean
@@ -33,6 +35,8 @@ const state: State = {
   firstFrame: false,
   introClock: -1,
   active: null,
+  line: 0,
+  said: 0,
   hover: null,
   pointerActiveAt: -1e9,
   reducedMotion: false,

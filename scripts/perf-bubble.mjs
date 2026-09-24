@@ -2,10 +2,12 @@
 // viewport, the production build — run `npm run build` first): fps, worst frame, and the
 // browser's own layout / style-recalc counts and times, for a few seconds with no bubble,
 // then with one open, then closed again.
-//   CPU=6 node scripts/perf-bubble.mjs [name=Łukasz P.]
+// A bubble now goes by itself once read, so the default is the longest first line (Krystian's,
+// up 5.6 s) and the open window is 4 s.
+//   CPU=6 node scripts/perf-bubble.mjs [name=Krystian]
 import { chromium } from 'playwright'
 import { preview } from 'vite'
-const who = process.argv[2] ?? 'Łukasz P.'
+const who = process.argv[2] ?? 'Krystian'
 const server = await preview({ configFile: 'vite.config.ts', logLevel: 'silent', preview: { host: '127.0.0.1', port: 4186, strictPort: false } })
 const browser = await chromium.launch({ channel: 'chromium', args: ['--use-angle=metal', '--ignore-gpu-blocklist', '--enable-gpu'] })
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
@@ -30,7 +32,7 @@ async function measure(label, secs = 5) {
 }
 await measure('no bubble')
 await page.evaluate((name) => [...document.querySelectorAll('.sr-only button')].find((b) => b.textContent === name)?.click(), who)
-await measure('bubble open')
+await measure('bubble open', 4)
 await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })))
 await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })))
 await measure('closed again')
