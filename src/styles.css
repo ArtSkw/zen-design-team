@@ -94,15 +94,18 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
 
 /* ---- speech bubble ---------------------------------------------------- */
 .bubble-layer { pointer-events: none; overflow: hidden; }
+/* the bubble and the name tag ride on these: moved by a transform only (Scene: Projector) */
+.bubble-pos, .nametag-pos { position: absolute; left: 0; top: 0; width: 0; height: 0; will-change: transform; }
 .bubble {
   position: absolute;
   left: 0;
   top: 0;
+  width: max-content; /* its own width, wherever it is: it never re-wraps as it moves */
   --tail-x: 50%;
   transform: translate(-50%, -100%);
   transform-origin: var(--tail-x) calc(100% + 14px);
   pointer-events: auto;
-  max-width: 300px;
+  max-width: min(300px, calc(100vw - 24px));
   padding: 12px 16px 13px;
   background: var(--paper);
   color: var(--ink);

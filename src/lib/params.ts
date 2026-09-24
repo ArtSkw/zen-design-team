@@ -38,6 +38,7 @@ export const DEBUG = {
   gest: P.str('gest', ''),         // force one gesture on every Zenek (design check): talk|look|scratch|wave|stretch|nod|tilt
   gestU: P.num('gestu', 0.5),      // …at this progress 0..1
   title: P.str('title', '1'),      // '0' skips the title card; 'hold' stays on it (design check)
+  adapt: P.flag('adapt', true),    // 0 = never step the pixel density down (measurements at a fixed dpr)
   waterCast: P.flag('wcast'),      // the cast in the water's reflection too (off: the terrace hides them; it saves a pass)
   dust: P.str('dust', '1'),        // the title lets go into petals before the room rises; '0' = the plain fade; 'hold' = frozen at its start, window.__dust.seek(ms) (design check)
   loaderT: P.num('lt', -1),        // with hold=1&done=1: freeze the loader's completion timeline at this second

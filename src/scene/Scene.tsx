@@ -114,11 +114,16 @@ function OrbitRig() {
 const _v = new Vector3()
 
 // Pins the speech bubble above the speaker, and the name tag above the hovered Zenek.
+// Moves the bubble and the name tag with the heads they belong to: a transform on each
+// one's own layer, snapped to device pixels, from sizes measured when they change (reading
+// them here every frame forced a layout and a repaint per frame — costly on phones).
+const snap = (v: number) => Math.round(v * window.devicePixelRatio) / window.devicePixelRatio
+
 function Projector() {
   useFrame(({ camera, size }) => {
     const S = store.get()
-    const bubble = bubbleEl.current
-    if (bubble && S.active) {
+    const b = bubbleEl
+    if (b.pos && b.box && S.active) {
       const head = headRegistry.get(S.active)
       if (head) {
         _v.setFromMatrixPosition(head.matrixWorld)
@@ -126,17 +131,20 @@ function Projector() {
         _v.project(camera)
         const px = ((_v.x + 1) / 2) * size.width
         const py = ((1 - _v.y) / 2) * size.height
-        const w = bubble.offsetWidth
-        const half = w / 2 + 12
+        const half = b.w / 2 + 12
         const cx = clamp(px, half, size.width - half)
-        const top = Math.max(bubble.offsetHeight + 12, py - 8)
-        bubble.style.left = `${cx}px`
-        bubble.style.top = `${top}px`
-        bubble.style.setProperty('--tail-x', `${clamp(px - (cx - w / 2), 18, w - 18)}px`)
+        const top = Math.max(b.h + 12, py - 8)
+        b.pos.style.transform = `translate3d(${snap(cx)}px, ${snap(top)}px, 0)`
+        // the tail points at the head; it moves only when the bubble is held at an edge
+        const tail = Math.round(clamp(px - (cx - b.w / 2), 18, b.w - 18))
+        if (tail !== b.tail) {
+          b.tail = tail
+          b.box.style.setProperty('--tail-x', `${tail}px`)
+        }
       }
     }
-    const tag = nameEl.current
-    if (tag && S.hover) {
+    const t = nameEl
+    if (t.pos && S.hover) {
       const head = headRegistry.get(S.hover)
       if (head) {
         _v.setFromMatrixPosition(head.matrixWorld)
@@ -144,9 +152,8 @@ function Projector() {
         _v.project(camera)
         const px = ((_v.x + 1) / 2) * size.width
         const py = ((1 - _v.y) / 2) * size.height
-        const half = tag.offsetWidth / 2 + 8
-        tag.style.left = `${clamp(px, half, size.width - half)}px`
-        tag.style.top = `${Math.max(tag.offsetHeight + 8, py - 6)}px`
+        const half = t.w / 2 + 8
+        t.pos.style.transform = `translate3d(${snap(clamp(px, half, size.width - half))}px, ${snap(Math.max(t.h + 8, py - 6))}px, 0)`
       }
     }
   })
@@ -206,7 +213,7 @@ function Clocks() {
     // A device that cannot hold the frame rate (a phone warming up and throttling) steps
     // its pixel density down, 0.25 at a time, never below 1 and never back up (no
     // flip-flopping): two 2-second windows under 48 fps in a row make one step.
-    if (s.phase !== 'ready') return
+    if (s.phase !== 'ready' || !DEBUG.adapt) return
     const p = perf.current
     const now = performance.now()
     if (!p.t0 || rawDt > 0.25) {

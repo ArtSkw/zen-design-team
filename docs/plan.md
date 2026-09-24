@@ -507,6 +507,24 @@
 > sculpt downloads are 2.2 MB gz of 2.7 MB — smaller needs a mesh codec (meshopt: +wasm,
 > CSP `wasm-unsafe-eval`) or fewer triangles (Artur's call).
 >
+> **Round 26 (2026-09-24) — the speech bubble costs nothing.** Artur: on phones the fps
+> dropped while a bubble was open. The projector moved it with `left`/`top` and read
+> `offsetWidth/Height` every frame — a forced layout and style recalc per frame (60/s each,
+> ~30 ms/s at CPU ×6) — and an absolutely positioned box shrinks to the room right of its
+> `left`, so on a phone the text re-wrapped (and re-balanced, `text-wrap: balance`) as the
+> head breathed; near the right edge the live bubble was squeezed to 90 × 137 px, 5 lines.
+> Now the bubble and the name tag ride on `.bubble-pos` / `.nametag-pos`, moved by
+> `translate3d` only (snapped to device px, `will-change: transform`); sizes come from a
+> ResizeObserver; the bubble is `width: max-content` (max `min(300px, 100vw − 24px)`); the
+> tail's `--tail-x` is written only when it moves a whole px. Open bubble: 60 → 0 layouts/s,
+> 60 → 2 style recalcs/s (trace: 180 → 1 layouts in 3 s). Close-ups: GPU-bound (a 5K canvas),
+> home 48 fps vs zoomed 43–44 and rotating the same — fewer calls and triangles zoomed in,
+> so it is pixel shading (hair sheen, clearcoat bodies filling the screen); left as is (the
+> levers are a softer image or simpler character shading — Artur's call); `?adapt=0` pins
+> the dpr for measuring. Tools: `scripts/perf-bubble.mjs`, `scripts/perf-zoom.mjs`. Test
+> pitfall: a git worktree with symlinked node_modules serves no fonts in dev (outside
+> `server.fs.allow`) — compare against the built live site instead.
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
 > designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters and all quotes pending; JS
 > JS ≈ 383 KB gz in all (first chunk 82 KB), ~33 KB over the 350 budget in sum.
