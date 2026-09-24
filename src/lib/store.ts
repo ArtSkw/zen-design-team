@@ -2,11 +2,13 @@ import { useSyncExternalStore } from 'react'
 
 export type Phase = 'loading' | 'title' | 'intro' | 'ready'
 
-type State = {
+export type State = {
   phase: Phase
   progress: number          // 0..1 loader progress
   loaded: boolean           // everything is in; the loader plays its completion
+  written: boolean          // the title's pen has finished, by its own clock (TitleCard)
   dissolve: boolean         // the written title lets go and turns into petals (TitleDust), still on the curtain
+  lift: boolean             // the petals are falling: the curtain may lift (TitleDust)
   posterLoaded: boolean
   fontsReady: boolean
   sculptsReady: boolean     // every baked hair and beard the cast wears is decoded
@@ -22,7 +24,9 @@ const state: State = {
   phase: 'loading',
   progress: 0,
   loaded: false,
+  written: false,
   dissolve: false,
+  lift: false,
   posterLoaded: false,
   fontsReady: false,
   sculptsReady: false,

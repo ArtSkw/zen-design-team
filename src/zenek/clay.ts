@@ -16,30 +16,34 @@ export function clay(color: string, o: ClayOpts = {}): Material {
   const hit = cache.get(key)
   if (hit) return hit
   const m = new MeshPhysicalMaterial({ color: new Color(color), roughness, sheen, sheenColor: new Color(sheenColor), sheenRoughness: 0.55, vertexColors: true })
+  // the groove's frequency and depth are uniforms, so every sculpt shares one program
+  // (they were baked into the source: a heavy physical shader per sculpt, compiled twice)
   m.onBeforeCompile = (sh: WebGLProgramParametersWithUniforms) => {
+    sh.uniforms.uClayFreq = { value: freq }
+    sh.uniforms.uClayAmp = { value: amp }
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec3 dir;\nvarying float vPhase;\nvarying vec3 vAcrossView;')
+      .replace('#include <common>', '#include <common>\nattribute vec3 dir;\nuniform float uClayFreq;\nvarying float vPhase;\nvarying vec3 vAcrossView;')
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         // across the lock: perpendicular to its direction, in the surface
         vec3 acrossObj = normalize(cross(normalize(dir + vec3(1e-4)), normal) + vec3(1e-5));
-        vPhase = dot(position, acrossObj) * ${freq.toFixed(1)};
+        vPhase = dot(position, acrossObj) * uClayFreq;
         vAcrossView = normalize(normalMatrix * acrossObj);`,
       )
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vPhase;\nvarying vec3 vAcrossView;')
+      .replace('#include <common>', '#include <common>\nuniform float uClayAmp;\nvarying float vPhase;\nvarying vec3 vAcrossView;')
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
         {
           vec3 ax = normalize(vAcrossView - dot(vAcrossView, normal) * normal + vec3(1e-5));
           float g = cos(vPhase + 0.9 * sin(vPhase * 0.23));
-          normal = normalize(normal + ax * g * ${amp.toFixed(3)});
+          normal = normalize(normal + ax * g * uClayAmp);
         }`,
       )
   }
-  m.customProgramCacheKey = () => `clay:${freq}:${amp}`
+  m.customProgramCacheKey = () => 'clay'
   cache.set(key, m)
   return m
 }

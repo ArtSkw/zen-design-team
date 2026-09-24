@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { MeshReflectorMaterial } from '@react-three/drei'
+import { ReflectorMaterial, notInWater } from './Reflector'
 import { BackSide, CanvasTexture, ClampToEdgeWrapping, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, Mesh, PlaneGeometry, ShaderMaterial, SRGBColorSpace, Vector3 } from 'three'
 import { ARC, CENTER, INK, Ink, PAPER, WATER, composition, drawRing, inkFor, makePlate, xOf, type Floater, type Plate, type Ring } from './ink'
-import { DEBUG } from '../lib/params'
+import { DEBUG, LITE } from '../lib/params'
 import { store } from '../lib/store'
 import { mulberry32, range } from '../lib/rng'
 import { skyAttention } from '../lib/sky'
@@ -62,10 +62,11 @@ export function PaperSky() {
 
 // ---- water: pale, flat, a ghost of the room, ending just inside the near strip ----
 export function Water({ radius }: { radius: number }) {
+  const water = useRef<Mesh>(null)
   return (
-    <mesh rotation-x={-Math.PI / 2} position={[CENTER.x, WATER_Y, CENTER.z]} receiveShadow>
+    <mesh ref={water} rotation-x={-Math.PI / 2} position={[CENTER.x, WATER_Y, CENTER.z]} receiveShadow>
       <circleGeometry args={[radius, 128]} />
-      <MeshReflectorMaterial blur={[420, 160]} resolution={768} mixBlur={1} mixStrength={0.9} roughness={0.7} depthScale={0} color={WATER} metalness={0} mirror={0.34} />
+      <ReflectorMaterial host={water} exclude={notInWater} blur={[420, 160]} resolution={LITE ? 384 : 768} every={LITE ? 4 : 1} mixBlur={1} mixStrength={0.9} roughness={0.7} depthScale={0} color={WATER} metalness={0} mirror={0.34} />
     </mesh>
   )
 }

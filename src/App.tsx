@@ -8,13 +8,30 @@ import { DUST_LEAD, DUST_REST, TitleDust } from './ui/TitleDust'
 import { ViewControls } from './ui/ViewControls'
 import { TITLE_MS, WRITTEN_MS } from './ui/TitleCard'
 import { TEAM } from './cast/team'
-import { store } from './lib/store'
+import { store, type State } from './lib/store'
 import { DEBUG } from './lib/params'
 
 // The 3D (three.js, R3F, the set, the cast) is its own chunk: the loader paints as
 // soon as the small first chunk has run, while the rest streams in behind it.
 const Scene = lazy(() => import('./scene/Scene').then((m) => ({ default: m.Scene })))
 const Sheet = lazy(() => import('./ui/Sheet').then((m) => ({ default: m.Sheet })))
+
+/** Calls `fn` once: when `pred` holds for the store, or after `ms` whatever happens (nothing may hang the boot). */
+function when(pred: (s: State) => boolean, fn: () => void, ms: number) {
+  let done = false
+  const go = () => {
+    if (done) return
+    done = true
+    unsub()
+    clearTimeout(timer)
+    fn()
+  }
+  const unsub = store.subscribe(() => {
+    if (pred(store.get())) go()
+  })
+  const timer = setTimeout(go, ms)
+  if (pred(store.get())) go()
+}
 
 // Boot sequence: loading → title (the loader's check done, "Meet ZEN Design Team"
 // writes itself in, then — as soon as it is written — lets go into falling petals, still on the curtain) →
@@ -65,11 +82,15 @@ function useBoot() {
             if (DEBUG.title === '0') return intro()
             setPhase('title')
             if (DEBUG.title === 'hold') return
-            if (s.reducedMotion || DEBUG.dust === '0') return void setTimeout(intro, s.reducedMotion ? 1400 : TITLE_MS)
-            setTimeout(() => {
-              store.set({ dissolve: true })
-              setTimeout(intro, DUST_LEAD)
-            }, WRITTEN_MS + DUST_REST)
+            if (s.reducedMotion) return void setTimeout(intro, 1400)
+            // the title's own clock says when it is written: a stalled phone writes it later, never skips it
+            when((st) => st.written, () => {
+              if (DEBUG.dust === '0') return void setTimeout(intro, TITLE_MS - WRITTEN_MS)
+              setTimeout(() => {
+                store.set({ dissolve: true })
+                when((st) => st.lift, intro, DUST_LEAD + 8000) // once its petals are falling
+              }, DUST_REST)
+            }, WRITTEN_MS + 12000)
           }, 1100)
         }, wait)
       }

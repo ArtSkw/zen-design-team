@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { useStore } from '../lib/store'
+import { store, useStore } from '../lib/store'
 import { DEBUG } from '../lib/params'
 import { mulberry32 } from '../lib/rng'
 import { smoothstep } from '../lib/anim'
@@ -29,6 +29,7 @@ const RAGGED = 380 // noise in the front: soft clumps with a fine grain
 const PRE = 180 // the ink greys this long before it goes…
 const DIM = 0.22 // …by this much
 const FADE = 170 // then thins away over this
+const STEP = 1000 / 15 // ms: the most the dust's clock advances in one frame (a stall pauses it)
 // what it becomes
 const PETAL_AREA = 150 // css px² of ink per petal
 const SPECK_AREA = 34 // css px² of ink per grain of ink powder
@@ -376,6 +377,7 @@ export function TitleDust() {
     const svg = document.querySelector<SVGSVGElement>('.tc-svg')
     const ctx = canvas?.getContext('2d')
     if (!canvas || !svg || !ctx) {
+      store.set({ lift: true }) // nothing to take over: the card keeps its plain fade
       setDone(true)
       return
     }
@@ -383,7 +385,8 @@ export function TitleDust() {
     const d = build(svg)
     const buildMs = performance.now() - b0
     if (!d) {
-      setDone(true) // nothing to take over: the card keeps its plain fade
+      store.set({ lift: true }) // nothing to take over: the card keeps its plain fade
+      setDone(true)
       return
     }
     canvas.width = Math.round(window.innerWidth * d.dpr)
@@ -402,15 +405,20 @@ export function TitleDust() {
       rect: d.rect,
       count: { petals: d.petals.length, specks: d.specks.length, pixels: d.idx.length, buildMs: Math.round(buildMs) },
     }
-    const t0 = performance.now()
-    ;(window as unknown as { __dust: { start: number } }).__dust.start = performance.timeOrigin + t0 // wall clock, ms
+    ;(window as unknown as { __dust: { start: number } }).__dust.start = performance.timeOrigin + performance.now() // wall clock, ms
+    if (frozen) setTimeout(() => store.set({ lift: true }), DUST_LEAD) // a frozen check still lets the room come
+    let t = 0
+    let last = -1
     const tick = (now: number) => {
       if (!frozen) {
-        if (now - t0 > d.end) {
+        t += last < 0 ? 0 : Math.min(now - last, STEP)
+        last = now
+        if (t >= DUST_LEAD && !store.get().lift) store.set({ lift: true }) // the petals are falling: the curtain may lift
+        if (t > d.end) {
           delete (window as unknown as { __dust?: object }).__dust // let the buffers go
           return setDone(true)
         }
-        drawAt(d, ctx, now - t0)
+        drawAt(d, ctx, t)
       }
       raf.current = requestAnimationFrame(tick)
     }

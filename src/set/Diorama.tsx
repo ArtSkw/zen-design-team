@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { MeshReflectorMaterial } from '@react-three/drei'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Mesh } from 'three'
+import { ReflectorMaterial } from './Reflector'
 import { LanternGlow, LightPool } from './Environment'
 import {
   BoxGeometry,
@@ -15,6 +16,7 @@ import {
   Vector3,
 } from 'three'
 import { SET, P } from './dims'
+import { LITE } from '../lib/params'
 import { LOGO_ASPECT, gravelTexture, logoTexture, plankTexture, posterTexture } from './textures'
 import { taperedTube } from '../zenek/geometry'
 import { leafGeometry, padGeometry, pillowGeometry } from './props'
@@ -71,11 +73,12 @@ function Slab() {
     s.holes.push(hole)
     return { top: new ShapeGeometry(s, 4), body: new ExtrudeGeometry(s, { depth: slab.h, bevelEnabled: false, curveSegments: 4 }) }
   }, [slab, garden])
+  const floor = useRef<Mesh>(null)
   return (
     <group>
       <mesh geometry={body} material={M.concreteDark} rotation-x={-Math.PI / 2} position={[0, -slab.h, 0]} castShadow receiveShadow />
-      <mesh geometry={top} rotation-x={-Math.PI / 2} position={[0, 0.002, 0]} receiveShadow>
-        <MeshReflectorMaterial blur={[360, 120]} resolution={1024} mixBlur={1} mixStrength={0.45} roughness={0.75} depthScale={0.8} minDepthThreshold={0.6} maxDepthThreshold={1.3} color="#c7c4be" metalness={0} mirror={0.22} />
+      <mesh ref={floor} geometry={top} rotation-x={-Math.PI / 2} position={[0, 0.002, 0]} receiveShadow>
+        <ReflectorMaterial host={floor} blur={[360, 120]} resolution={LITE ? 512 : 1024} every={LITE ? 2 : 1} offset={1} mixBlur={1} mixStrength={0.45} roughness={0.75} depthScale={0.8} minDepthThreshold={0.6} maxDepthThreshold={1.3} color="#c7c4be" metalness={0} mirror={0.22} />
       </mesh>
     </group>
   )

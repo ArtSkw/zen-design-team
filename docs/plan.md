@@ -481,6 +481,32 @@
 > when the canvas first presents. Real-GPU probing: Playwright `channel: 'chromium'` with
 > `--use-angle=metal` (swiftshader starves the main thread; screencast frames are stale).
 >
+> **Round 25 (2026-09-24) — phones: the title never skips, the room stays smooth.** Artur's
+> phone test: after a long load the title appeared already written, and the room ran well
+> for 5–10 s then stuttered for good. (1) The pen's clock was wall time from mount: a
+> main-thread stall at the title's start (reproduced: a 2 s freeze → 100 % drawn on the
+> next frame, petals 14 ms later) skipped the whole write-on. The pen and the dust now
+> keep frame clocks that advance ≤ 1/15 s a frame (a stall pauses them), and the boot
+> follows milestones, not timers: `written` (TitleCard) → `DUST_REST` → `dissolve` →
+> `lift` (TitleDust, at `DUST_LEAD` on its clock) → intro, each with a fallback timer
+> (`when()` in App). (2) No leak (draws, uploads, heap flat for 40 s); the rig is ~4 scene
+> renders a frame — screen 579 calls/1.3 M tris (shadow map 204/0.5 M), water reflection
+> 367/0.78 M, floor reflection 349/0.8 M — which a phone holds until it heats and
+> throttles. Fixes: `src/set/Reflector.tsx` = drei's reflector with `every`/`offset` (redraw
+> every N frames) and `exclude` — the water no longer sees the cast (hidden by the terrace:
+> A/B at home and the orbit extremes is at the noise floor; −0.74 M tris, −156 calls, every
+> device); the clay shader's groove freq/amp are uniforms (one program for every sculpt:
+> 84 → 64 programs; lab A/B max diff 0); the 3D pauses (`frameloop 'never'`) from `loaded`
+> until the curtain lifts, after warming up under the curtain (`firstFrame` = 3 frames with
+> the cast dressed); `LITE` tier (`?lite=`; coarse pointer + short side < 820): dpr ≤ 1.5,
+> shadow map 1024 / 8 samples / radius 3.5, floor reflection 512 every 2nd frame, water 384
+> every 4th; adaptive dpr for all: two 2 s windows < 48 fps → −0.25, floor 1, never back
+> up. Emulated phone (CPU ×6, Metal): 33–36 fps → 58–60 steady, 1080 → 672 draws a frame;
+> load-to-title (CPU ×4) 2.5–2.9 s → 2.4–2.6 s, loading long frames −25–40 %. Tools:
+> `scripts/perf-phone.mjs`, `scripts/perf-passes.mjs` (dev-only `window.__gl`). Not done:
+> sculpt downloads are 2.2 MB gz of 2.7 MB — smaller needs a mesh codec (meshopt: +wasm,
+> CSP `wasm-unsafe-eval`) or fewer triangles (Artur's call).
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
 > designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters and all quotes pending; JS
 > JS ≈ 383 KB gz in all (first chunk 82 KB), ~33 KB over the 350 budget in sum.

@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping, NoToneMapping, Vector3, type Camera } from 'three'
 import cam from '../stage/camera.json'
-import { DEBUG, P } from '../lib/params'
+import { DEBUG, LITE, P } from '../lib/params'
 import { store, useStore } from '../lib/store'
 import { clamp, damp, easeOutCubic } from '../lib/anim'
 import { Lighting } from './Lighting'
@@ -178,12 +178,53 @@ function Rise({ children }: { children: React.ReactNode }) {
   return <group ref={ref}>{children}</group>
 }
 
+const DPR_MAX = LITE ? 1.5 : 2
+
 function Clocks() {
   const phase = useStore((s) => s.phase)
-  useFrame(({ clock }) => {
+  const loaded = useStore((s) => s.loaded)
+  const setFrameloop = useThree((s) => s.setFrameloop)
+  const setDpr = useThree((s) => s.setDpr)
+  const warm = useRef(0)
+  const perf = useRef({ t0: 0, frames: 0, low: 0, dpr: Math.min(DPR_MAX, window.devicePixelRatio || 1) })
+
+  // Once everything has been drawn under the curtain (compiled, uploaded), the 3D rests
+  // until the curtain lifts: the loader's check, the title and its petals get the whole
+  // device (a phone was drawing the hidden room four times a frame meanwhile).
+  const behind = DEBUG.intro && loaded && (phase === 'loading' || phase === 'title')
+  useEffect(() => {
+    setFrameloop(behind ? 'never' : 'always')
+  }, [behind, setFrameloop])
+
+  useFrame(({ clock }, rawDt) => {
     const s = store.get()
-    if (!s.firstFrame && s.sculptsReady) store.set({ firstFrame: true }) // a frame with the whole cast dressed
+    // the scene counts as drawn a few frames after the whole cast is dressed (the sculpt
+    // meshes mount a frame or two after their data is in)
+    if (!s.firstFrame && s.sculptsReady && ++warm.current > 3) store.set({ firstFrame: true })
     if (phase === 'intro' && s.introClock < 0) store.set({ introClock: clock.elapsedTime })
+
+    // A device that cannot hold the frame rate (a phone warming up and throttling) steps
+    // its pixel density down, 0.25 at a time, never below 1 and never back up (no
+    // flip-flopping): two 2-second windows under 48 fps in a row make one step.
+    if (s.phase !== 'ready') return
+    const p = perf.current
+    const now = performance.now()
+    if (!p.t0 || rawDt > 0.25) {
+      p.t0 = now // (re)start the window; a hidden tab or a hitch is no measure
+      p.frames = 0
+      return
+    }
+    p.frames++
+    if (now - p.t0 < 2000) return
+    const fps = (p.frames * 1000) / (now - p.t0)
+    p.t0 = now
+    p.frames = 0
+    p.low = fps < 48 ? p.low + 1 : 0
+    if (p.low >= 2 && p.dpr > 1) {
+      p.dpr = Math.max(1, p.dpr - 0.25)
+      p.low = 0
+      setDpr(p.dpr)
+    }
   })
   return null
 }
@@ -194,9 +235,10 @@ export function Scene() {
       <Canvas
         shadows="variance"
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
-        dpr={[1, 2]}
+        dpr={[1, DPR_MAX]}
         camera={{ fov: P.num('fov', cam.fov), near: 0.5, far: 600, position: [18, 12, 12] }}
         onCreated={({ gl }) => {
+          if (import.meta.env.DEV) (window as unknown as { __gl?: unknown }).__gl = gl // perf probes (dev only)
           gl.setClearColor(0x000000, 0)
           gl.toneMapping = TONE[DEBUG.tone as keyof typeof TONE] ?? NeutralToneMapping
           gl.toneMappingExposure = P.num('exp', 1.0)

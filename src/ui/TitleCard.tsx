@@ -33,6 +33,7 @@ const HOLD = 440 // ms the finished title holds before the room comes (the plain
 const WET = 8 // units of soft, wet ink ahead of the solid ink
 const DRY = 90 // ms for the ink to settle after the pen leaves a stroke
 const SOFT = 1.5 // blur of the wet edge, in units
+const STEP = 1000 / 15 // ms: the most the pen's clock advances in one frame
 const WET_INK = 0.55 // how dark the wet edge is before it settles
 
 // ---- geometry -------------------------------------------------------------------
@@ -236,6 +237,7 @@ function Written({ out }: { out: boolean }) {
     }
     if (reduced) {
       draw(Infinity)
+      store.set({ written: true })
       return
     }
     // design check: window.__title.seek(ms) freezes the card at a moment
@@ -247,11 +249,18 @@ function Written({ out }: { out: boolean }) {
       },
       duration: TITLE_MS,
     }
-    const t0 = performance.now()
+    // The pen keeps its own clock, from the first frame it is seen in, and a frame moves it
+    // by STEP at most: when the device stalls (a phone busy with the 3D, a slow first paint
+    // of the masks) the pen waits, rather than jumping ahead to a title already written.
+    let t = 0
+    let last = -1
     let raf = 0
     const tick = (now: number) => {
-      if (!frozen) draw(now - t0)
-      if (now - t0 < PERFORMANCE.end + 100) raf = requestAnimationFrame(tick)
+      t += last < 0 ? 0 : Math.min(now - last, STEP)
+      last = now
+      if (!frozen) draw(t)
+      if (t >= PERFORMANCE.end && !store.get().written) store.set({ written: true })
+      if (t < PERFORMANCE.end + 100) raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)

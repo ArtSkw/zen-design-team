@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import type { DirectionalLight } from 'three'
-import { P as PP } from '../lib/params'
+import { LITE, P as PP } from '../lib/params'
 
 // Studio light for a diorama on a white page: one key from the right-front-top
 // (soft shadows to the back-left, as in the reference render), a big soft top
@@ -28,18 +28,18 @@ function Key() {
       intensity={PP.num('key', 2.3)}
       color="#fffaf4"
       castShadow
-      shadow-mapSize-width={2048}
-      shadow-mapSize-height={2048}
+      shadow-mapSize-width={LITE ? 1024 : 2048}
+      shadow-mapSize-height={LITE ? 1024 : 2048}
       shadow-bias={-0.0002}
       shadow-normalBias={0.02}
-      shadow-blurSamples={16}
+      shadow-blurSamples={LITE ? 8 : 16}
       shadow-camera-left={-13}
       shadow-camera-right={13}
       shadow-camera-top={12}
       shadow-camera-bottom={-12}
       shadow-camera-near={5}
       shadow-camera-far={60}
-      shadow-radius={7}
+      shadow-radius={LITE ? 3.5 : 7} // the same softness in the world at half the map
     />
   )
 }

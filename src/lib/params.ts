@@ -14,6 +14,13 @@ export const P = {
   str: (k: string, d: string) => q.get(k) ?? d,
 }
 
+// Phones get lighter passes (Scene, Lighting, the reflections): the full rig is ~4 scene
+// renders a frame, which a phone holds for a few seconds and then throttles under.
+// `?lite=1|0` forces the tier either way.
+const phone =
+  typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && typeof screen !== 'undefined' && Math.min(screen.width, screen.height) < 820
+export const LITE = P.flag('lite', phone)
+
 export const DEBUG = {
   grid: P.flag('grid'),            // calibration grid + depth markers
   intro: P.flag('intro', true),    // 0 = skip loader and entrance, land settled
@@ -31,6 +38,7 @@ export const DEBUG = {
   gest: P.str('gest', ''),         // force one gesture on every Zenek (design check): talk|look|scratch|wave|stretch|nod|tilt
   gestU: P.num('gestu', 0.5),      // …at this progress 0..1
   title: P.str('title', '1'),      // '0' skips the title card; 'hold' stays on it (design check)
+  waterCast: P.flag('wcast'),      // the cast in the water's reflection too (off: the terrace hides them; it saves a pass)
   dust: P.str('dust', '1'),        // the title lets go into petals before the room rises; '0' = the plain fade; 'hold' = frozen at its start, window.__dust.seek(ms) (design check)
   loaderT: P.num('lt', -1),        // with hold=1&done=1: freeze the loader's completion timeline at this second
   loaderAngle: P.num('la', 0),     // …and complete from this spin angle, in degrees (0 = dot at the bottom)

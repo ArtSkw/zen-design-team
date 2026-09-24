@@ -1,9 +1,11 @@
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect, useRef } from 'react'
+import type { Group } from 'three'
 import { ENTRANCE_ORDER, TEAM, type Member } from './team'
 import { Zenek, useZenekRefs } from '../zenek/Zenek'
 import { headRegistry, useMirror, useZenekMotion } from '../zenek/motion'
 import { store } from '../lib/store'
 import { DEBUG, P } from '../lib/params'
+import { notInWater } from '../set/Reflector'
 
 // dev only: the published page never loads a model named in the URL
 const GlbRef = import.meta.env.DEV ? lazy(() => import('./GlbRef')) : null
@@ -40,6 +42,17 @@ function Seated({ member, order }: { member: Member; order: number }) {
 }
 
 export function Cast() {
+  // the water's reflection never sees the cast: the terrace hides them from it, and they
+  // would cost it a pass of their own (Reflector)
+  const group = useRef<Group>(null)
+  useEffect(() => {
+    const g = group.current
+    if (!g || DEBUG.waterCast) return
+    notInWater.add(g)
+    return () => {
+      notInWater.delete(g)
+    }
+  }, [])
   if (DEBUG.lab) {
     const m = TEAM.find((x) => x.id === DEBUG.lab) ?? TEAM[0]
     // `?labyaw=` turns the Zenek (degrees) for views the orbit's limits do not reach (the back)
@@ -54,10 +67,10 @@ export function Cast() {
     return <Seated member={solo} order={0} />
   }
   return (
-    <>
+    <group ref={group}>
       {TEAM.map((m) => (
         <Seated key={m.id} member={m} order={ENTRANCE_ORDER.indexOf(m.id)} />
       ))}
-    </>
+    </group>
   )
 }
