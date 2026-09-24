@@ -1,4 +1,4 @@
-import { BufferGeometry, ExtrudeGeometry, Quaternion, Shape, Vector2, Vector3, type ExtrudeGeometryOptions } from 'three'
+import { BufferGeometry, ExtrudeGeometry, Float32BufferAttribute, Quaternion, Shape, Vector2, Vector3, type Curve, type ExtrudeGeometryOptions } from 'three'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 
 // Point on a superellipse |x/a|^n + |y/b|^n = 1 at parameter t.
@@ -6,41 +6,6 @@ export function sePoint(a: number, b: number, n: number, t: number, out = new Ve
   const c = Math.cos(t)
   const s = Math.sin(t)
   return out.set(a * Math.sign(c) * Math.pow(Math.abs(c), 2 / n), b * Math.sign(s) * Math.pow(Math.abs(s), 2 / n))
-}
-
-export function superellipseShape(a: number, b: number, n: number, segs = 96): Shape {
-  const shape = new Shape()
-  const p = new Vector2()
-  for (let i = 0; i <= segs; i++) {
-    sePoint(a, b, n, (i / segs) * Math.PI * 2, p)
-    if (i === 0) shape.moveTo(p.x, p.y)
-    else shape.lineTo(p.x, p.y)
-  }
-  shape.closePath()
-  return shape
-}
-
-type SE = { a: number; b: number; n: number; cy?: number }
-
-// A beard-shaped band: the lower arc between an inner superellipse (the face
-// plate plus a gap) and a larger outer one. t0 sets how far up the sides it climbs.
-export function crescentShape(inner: SE, outer: SE, t0: number, segs = 64): Shape {
-  const shape = new Shape()
-  const p = new Vector2()
-  const span = Math.PI - 2 * t0
-  for (let i = 0; i <= segs; i++) {
-    sePoint(outer.a, outer.b, outer.n, Math.PI + t0 + (i / segs) * span, p)
-    p.y += outer.cy ?? 0
-    if (i === 0) shape.moveTo(p.x, p.y)
-    else shape.lineTo(p.x, p.y)
-  }
-  for (let i = segs; i >= 0; i--) {
-    sePoint(inner.a, inner.b, inner.n, Math.PI + t0 + (i / segs) * span, p)
-    p.y += inner.cy ?? 0
-    shape.lineTo(p.x, p.y)
-  }
-  shape.closePath()
-  return shape
 }
 
 // Arc coordinates → world point. x, y are arc lengths on a sphere of radius R
@@ -72,21 +37,6 @@ export function between(a: Vector3, b: Vector3) {
   }
 }
 
-// Bends a flat extrusion (shape in XY, extruded along +z) onto the sphere:
-// x, y become arc lengths, z becomes height above surfaceR.
-export function wrapOntoSphere(geom: BufferGeometry, R: number, surfaceR = R) {
-  const pos = geom.attributes.position
-  const v = new Vector3()
-  for (let i = 0; i < pos.count; i++) {
-    onSphere(pos.getX(i), pos.getY(i), surfaceR - R + pos.getZ(i), R, v)
-    pos.setXYZ(i, v.x, v.y, v.z)
-  }
-  pos.needsUpdate = true
-  geom.computeVertexNormals()
-  geom.computeBoundingSphere()
-  return geom
-}
-
 // ExtrudeGeometry with welded vertices so the bevel shades smoothly.
 export function smoothExtrude(shape: Shape, opts: ExtrudeGeometryOptions): BufferGeometry {
   const g = new ExtrudeGeometry(shape, opts)
@@ -95,15 +45,6 @@ export function smoothExtrude(shape: Shape, opts: ExtrudeGeometryOptions): Buffe
   const merged = mergeVertices(g, 1e-5)
   g.dispose()
   return merged
-}
-
-// ---- added for the reference-driven canon ------------------------------------
-import { Float32BufferAttribute, type Curve } from 'three'
-
-// Point on a sphere from yaw (around +y, 0 = front/+z) and pitch (up positive).
-export function sph(yaw: number, pitch: number, r: number, out = new Vector3()) {
-  const cp = Math.cos(pitch)
-  return out.set(cp * Math.sin(yaw) * r, Math.sin(pitch) * r, cp * Math.cos(yaw) * r)
 }
 
 function strip(pos: number[], idx: number[], rows: number, segs: number, flip = false) {

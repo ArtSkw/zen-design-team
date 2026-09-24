@@ -6,7 +6,7 @@ type State = {
   phase: Phase
   progress: number          // 0..1 loader progress
   loaded: boolean           // everything is in; the loader plays its completion
-  plateLoaded: boolean
+  posterLoaded: boolean
   fontsReady: boolean
   sculptsReady: boolean     // every baked hair and beard the cast wears is decoded
   firstFrame: boolean
@@ -21,7 +21,7 @@ const state: State = {
   phase: 'loading',
   progress: 0,
   loaded: false,
-  plateLoaded: false,
+  posterLoaded: false,
   fontsReady: false,
   sculptsReady: false,
   firstFrame: false,

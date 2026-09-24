@@ -114,7 +114,7 @@ function LeftWall() {
   useEffect(() => {
     logoTexture().then(setLogoTex).catch(() => undefined)
   }, [])
-  const posterTex = useMemo(() => posterTexture(() => store.set({ plateLoaded: true })), [])
+  const posterTex = useMemo(() => posterTexture(() => store.set({ posterLoaded: true })), [])
   const logoW = 0.5
   const logoH = logoW * LOGO_ASPECT
   return (

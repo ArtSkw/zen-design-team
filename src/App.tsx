@@ -1,17 +1,19 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Frame } from './ui/Frame'
-import { Scene } from './scene/Scene'
 import { BubbleLayer } from './ui/Bubble'
 import { NameTag } from './ui/NameTag'
 import { A11yList } from './ui/A11y'
 import { Loader } from './ui/Loader'
 import { ViewControls } from './ui/ViewControls'
-import { Sheet } from './ui/Sheet'
 import { TITLE_MS } from './ui/TitleCard'
-import { preloadSculpts } from './zenek/sculptAsset'
 import { TEAM } from './cast/team'
 import { store } from './lib/store'
 import { DEBUG } from './lib/params'
+
+// The 3D (three.js, R3F, the set, the cast) is its own chunk: the loader paints as
+// soon as the small first chunk has run, while the rest streams in behind it.
+const Scene = lazy(() => import('./scene/Scene').then((m) => ({ default: m.Scene })))
+const Sheet = lazy(() => import('./ui/Sheet').then((m) => ({ default: m.Sheet })))
 
 // Boot sequence: loading → title (the loader's check done, "Meet ZEN Design Team"
 // writes itself in) → intro (the title dissolves, the curtain lifts, the room rises,
@@ -29,7 +31,9 @@ function useBoot() {
     const fontsTimeout = setTimeout(() => store.set({ fontsReady: true }), 4000)
     // nobody arrives half-dressed: the loader waits for every baked sculpt the cast wears
     const sculpts = [...new Set(TEAM.flatMap((mm) => [...mm.parts.flatMap((p) => (p.type === 'sculpt' ? [p.name] : [])), ...(mm.arms ? [mm.arms.upper, mm.arms.fore] : [])]))]
-    preloadSculpts(sculpts).then(() => store.set({ sculptsReady: true }))
+    import('./zenek/sculptAsset')
+      .then((m) => m.preloadSculpts(sculpts))
+      .then(() => store.set({ sculptsReady: true }))
     document.fonts?.ready.then(() => store.set({ fontsReady: true }))
 
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -40,7 +44,7 @@ function useBoot() {
     let scheduled = false
     const unsub = store.subscribe(() => {
       const s = store.get()
-      const p = 0.45 * +s.plateLoaded + 0.15 * +s.fontsReady + 0.2 * +s.firstFrame + 0.2 * +s.sculptsReady
+      const p = 0.45 * +s.posterLoaded + 0.15 * +s.fontsReady + 0.2 * +s.firstFrame + 0.2 * +s.sculptsReady
       if (Math.abs(p - s.progress) > 1e-6) store.set({ progress: p })
       if (!DEBUG.intro) {
         if (s.firstFrame && s.phase !== 'ready') setPhase('ready')
@@ -79,11 +83,18 @@ function useBoot() {
 
 export default function App() {
   useBoot()
-  if (DEBUG.sheet) return <Sheet />
+  if (DEBUG.sheet)
+    return (
+      <Suspense fallback={null}>
+        <Sheet />
+      </Suspense>
+    )
   return (
     <>
       <Frame>
-        <Scene />
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
         <BubbleLayer />
         <div className="bubble-layer">
           <NameTag />

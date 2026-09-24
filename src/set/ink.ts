@@ -236,29 +236,6 @@ export function inkFor(r: number, dpr = 2) {
 }
 
 // ---- small textures for the 3D side ---------------------------------------------
-/** Stroke ripples around a piling: three thin rings, fading outward. 2.2 × 2.2 units. */
-export function rippleTexture() {
-  const S = 256
-  const c = document.createElement('canvas')
-  c.width = c.height = S
-  const ctx = c.getContext('2d')!
-  const rings: [number, number][] = [
-    [0.17, 0.3],
-    [0.3, 0.18],
-  ]
-  ctx.lineWidth = 2.4
-  for (const [f, a] of rings) {
-    ctx.strokeStyle = tone(1, a)
-    ctx.beginPath()
-    ctx.arc(S / 2, S / 2, f * S, 0, Math.PI * 2)
-    ctx.stroke()
-  }
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  t.anisotropy = 4
-  return t
-}
-
 /** A baked warm pool of lantern light for the gravel. */
 export function poolTexture() {
   const S = 128

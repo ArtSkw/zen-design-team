@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type ComponentRef } from 'react'
 import type { Group } from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping, NoToneMapping, Vector3, type Camera } from 'three'
 import cam from '../stage/camera.json'
 import { DEBUG, P } from '../lib/params'
@@ -33,7 +32,7 @@ function place(camera: Camera, target: Vector3, s: Spherical) {
 // Free orbit + zoom within limits; DOM controls push goals through `view`;
 // a whisper of idle drift when nobody has touched it for a while.
 function OrbitRig() {
-  const ref = useRef<OrbitControlsImpl>(null)
+  const ref = useRef<ComponentRef<typeof OrbitControls>>(null)
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
   const target = useMemo(() => new Vector3(P.num('tx', cam.tx), P.num('ty', cam.ty), -P.num('tz', cam.tz)), [])
