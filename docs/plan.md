@@ -469,7 +469,10 @@
 > slowly, rocking like leaves, with a fine ink powder. Artur's direction after the first
 > cut: the dissolve must happen before the room shows, slower and subtler, petals soft and
 > hand-drawn (not tiles). The curtain lifts `DUST_LEAD` = 1.3 s into it, so the petals fall
-> over the revealed room; gone by ~3.8 s. `?dust=0` = the old fade, `?dust=hold` +
+> over the revealed room; gone by ~3.8 s. Follow-up (Artur): it lets go as soon as the
+> title is written — `WRITTEN_MS` (pen lifted, ink settled, 1.55 s) + `DUST_REST` 120 ms,
+> not the 440 ms hold the plain fade keeps — and the first erosion comes 180 ms in (was
+> 260): the petals start ~0.4 s sooner. `?dust=0` = the old fade, `?dust=hold` +
 > `window.__dust.seek(ms)` for frames; `scripts/debug-dust.mjs` (`--paper 0`, `--vp`,
 > `--dpr`). Perf fix found on the way: the room (`Rise`) and every Zenek root were
 > invisible until the intro, so all shaders compiled and buffers uploaded AT the reveal

@@ -17,6 +17,8 @@ import { GLYPHS } from './title-glyphs'
 // they drift down over the room as it is revealed, and are gone soon after.
 
 const VIEW = { x: 0, y: -2, w: 627, h: 58 } // the title card's viewBox (TitleCard.tsx)
+/** ms the finished title rests before it lets go (App) — it goes as soon as it is written. */
+export const DUST_REST = 120
 /** ms from the title letting go to the curtain lifting (App). */
 export const DUST_LEAD = 1300
 
@@ -24,7 +26,7 @@ export const DUST_LEAD = 1300
 const SWEEP = 1150 // for the front to cross the title
 const TILT = 160 // within a letter the bottom lets go first
 const RAGGED = 380 // noise in the front: soft clumps with a fine grain
-const PRE = 260 // the ink greys this long before it goes…
+const PRE = 180 // the ink greys this long before it goes…
 const DIM = 0.22 // …by this much
 const FADE = 170 // then thins away over this
 // what it becomes

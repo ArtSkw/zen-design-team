@@ -29,7 +29,7 @@ const LAND = 0.5 // share of the cruise the pen starts and lands at
 const AIR = 2.2 // the pen travels through the air this much faster than it writes
 const FLOW = 0.32 // the next letter starts before the last stroke lands, by this share of it
 const BREATH = 70 // ms between words
-const HOLD = 440 // ms the finished title holds before the room comes
+const HOLD = 440 // ms the finished title holds before the room comes (the plain fade; its petals start sooner: TitleDust)
 const WET = 8 // units of soft, wet ink ahead of the solid ink
 const DRY = 90 // ms for the ink to settle after the pen leaves a stroke
 const SOFT = 1.5 // blur of the wet edge, in units
@@ -187,6 +187,8 @@ function perform() {
 const PERFORMANCE = perform()
 /** How long the title phase lasts, from the card appearing to the room starting to rise. */
 export const TITLE_MS = Math.round(PERFORMANCE.end + HOLD)
+/** When the pen has lifted and the last ink has settled, from the card appearing. */
+export const WRITTEN_MS = Math.round(PERFORMANCE.end)
 
 /** Where the pen is along a stroke `lt` ms after it began (units). */
 function headAt(s: Stroke, lt: number) {

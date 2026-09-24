@@ -4,9 +4,9 @@ import { BubbleLayer } from './ui/Bubble'
 import { NameTag } from './ui/NameTag'
 import { A11yList } from './ui/A11y'
 import { Loader } from './ui/Loader'
-import { DUST_LEAD, TitleDust } from './ui/TitleDust'
+import { DUST_LEAD, DUST_REST, TitleDust } from './ui/TitleDust'
 import { ViewControls } from './ui/ViewControls'
-import { TITLE_MS } from './ui/TitleCard'
+import { TITLE_MS, WRITTEN_MS } from './ui/TitleCard'
 import { TEAM } from './cast/team'
 import { store } from './lib/store'
 import { DEBUG } from './lib/params'
@@ -17,7 +17,7 @@ const Scene = lazy(() => import('./scene/Scene').then((m) => ({ default: m.Scene
 const Sheet = lazy(() => import('./ui/Sheet').then((m) => ({ default: m.Sheet })))
 
 // Boot sequence: loading → title (the loader's check done, "Meet ZEN Design Team"
-// writes itself in, holds, then lets go into falling petals, still on the curtain) →
+// writes itself in, then — as soon as it is written — lets go into falling petals, still on the curtain) →
 // intro (once the petals are falling: the curtain lifts, the room rises, Zeneks
 // arrive) → ready.
 function useBoot() {
@@ -69,7 +69,7 @@ function useBoot() {
             setTimeout(() => {
               store.set({ dissolve: true })
               setTimeout(intro, DUST_LEAD)
-            }, TITLE_MS)
+            }, WRITTEN_MS + DUST_REST)
           }, 1100)
         }, wait)
       }
