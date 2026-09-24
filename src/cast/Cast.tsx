@@ -5,7 +5,8 @@ import { headRegistry, useMirror, useZenekMotion } from '../zenek/motion'
 import { store } from '../lib/store'
 import { DEBUG, P } from '../lib/params'
 
-const GlbRef = lazy(() => import('./GlbRef'))
+// dev only: the published page never loads a model named in the URL
+const GlbRef = import.meta.env.DEV ? lazy(() => import('./GlbRef')) : null
 
 function Seated({ member, order }: { member: Member; order: number }) {
   const refs = useZenekRefs()
@@ -44,7 +45,7 @@ export function Cast() {
     // `?labyaw=` turns the Zenek (degrees) for views the orbit's limits do not reach (the back)
     const solo: Member = { ...m, seat: { x: 8.6, y: 0, z: -3, yaw: (P.num('labyaw', 0) * Math.PI) / 180 } }
     const glb = P.str('glb', '')
-    if (glb)
+    if (GlbRef && glb)
       return (
         <Suspense fallback={null}>
           <GlbRef url={glb.startsWith('/') ? glb : `/${glb}`} at={[8.6, 0, -3]} width={P.num('glbw', 2.64)} yaw={P.num('glbyaw', 0)} />
