@@ -4,6 +4,7 @@ import { BubbleLayer } from './ui/Bubble'
 import { NameTag } from './ui/NameTag'
 import { A11yList } from './ui/A11y'
 import { Loader } from './ui/Loader'
+import { DUST_LEAD, TitleDust } from './ui/TitleDust'
 import { ViewControls } from './ui/ViewControls'
 import { TITLE_MS } from './ui/TitleCard'
 import { TEAM } from './cast/team'
@@ -16,8 +17,9 @@ const Scene = lazy(() => import('./scene/Scene').then((m) => ({ default: m.Scene
 const Sheet = lazy(() => import('./ui/Sheet').then((m) => ({ default: m.Sheet })))
 
 // Boot sequence: loading → title (the loader's check done, "Meet ZEN Design Team"
-// writes itself in) → intro (the title dissolves, the curtain lifts, the room rises,
-// Zeneks arrive) → ready.
+// writes itself in, holds, then lets go into falling petals, still on the curtain) →
+// intro (once the petals are falling: the curtain lifts, the room rises, Zeneks
+// arrive) → ready.
 function useBoot() {
   useEffect(() => {
     const start = performance.now()
@@ -62,7 +64,12 @@ function useBoot() {
           setTimeout(() => {
             if (DEBUG.title === '0') return intro()
             setPhase('title')
-            if (DEBUG.title !== 'hold') setTimeout(intro, s.reducedMotion ? 1400 : TITLE_MS)
+            if (DEBUG.title === 'hold') return
+            if (s.reducedMotion || DEBUG.dust === '0') return void setTimeout(intro, s.reducedMotion ? 1400 : TITLE_MS)
+            setTimeout(() => {
+              store.set({ dissolve: true })
+              setTimeout(intro, DUST_LEAD)
+            }, TITLE_MS)
           }, 1100)
         }, wait)
       }
@@ -103,6 +110,7 @@ export default function App() {
       </Frame>
       {!DEBUG.lab && <ViewControls />}
       <Loader />
+      <TitleDust />
       <h1 className="sr-only">ZEN Design Team</h1>
     </>
   )

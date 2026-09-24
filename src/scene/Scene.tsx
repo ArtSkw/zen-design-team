@@ -166,7 +166,9 @@ function Rise({ children }: { children: React.ReactNode }) {
     }
     if (S.introClock < 0) {
       g.position.y = -1.6
-      g.visible = false
+      // drawn under the curtain while loading, so every shader compiles and every buffer
+      // uploads then (the loader spins on the compositor) — not in the middle of the reveal
+      g.visible = S.phase === 'loading'
       return
     }
     g.visible = true
@@ -180,7 +182,7 @@ function Clocks() {
   const phase = useStore((s) => s.phase)
   useFrame(({ clock }) => {
     const s = store.get()
-    if (!s.firstFrame) store.set({ firstFrame: true })
+    if (!s.firstFrame && s.sculptsReady) store.set({ firstFrame: true }) // a frame with the whole cast dressed
     if (phase === 'intro' && s.introClock < 0) store.set({ introClock: clock.elapsedTime })
   })
   return null

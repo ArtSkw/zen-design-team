@@ -201,6 +201,8 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
 }
 .tc-ink { fill: var(--ink); }
 .title-card--out { opacity: 0; filter: blur(6px); transform: scale(1.02); }
+/* the title letting go into petals (TitleDust): above the curtain, so they fall on over the rising room */
+.title-dust { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
 .title-card--calm .tc-svg { animation: tc-fade 600ms ease-out both; }
 @keyframes tc-settle { from { transform: scale(0.985); } to { transform: scale(1); } }
 @keyframes tc-fade { from { opacity: 0; } }

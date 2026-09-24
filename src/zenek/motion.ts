@@ -119,7 +119,7 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
     let e = 1
     if (DEBUG.intro) {
       if (S.introClock < 0) {
-        root.visible = false
+        root.visible = S.phase === 'loading' // drawn under the curtain while loading: compiled before the entrance (Scene: Rise)
         return
       }
       const local = t - S.introClock - INTRO_DELAY - order * STAGGER

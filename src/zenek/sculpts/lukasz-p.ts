@@ -56,12 +56,13 @@ export const lukaszHair: SculptSpec = {
 // ---- the arms: jointed (the left one, R = 1; the right is its mirror) ----------------------
 // Artur (2026-09-24): three shapes that read as a man's arm — shoulder, biceps, forearm —
 // set up and close to the body, and a wave that bends at the elbow. The upper arm hangs
-// from the shoulder pivot (its origin); the forearm from the elbow pivot at (−0.08, −0.44,
-// 0.07) in the upper arm's frame (team.ts), its fist at the end.
+// from the shoulder pivot (its origin); the forearm from the elbow pivot at (−0.08, −0.32,
+// 0.07) in the upper arm's frame (team.ts), its fist at the end. Shortened (2026-09-24):
+// the same girth, ~14 % less from shoulder to fist, so he sits in line with the others.
 export const lukaszUpperArm: SculptSpec = {
   build: () => {
     const deltoid = ellipsoidP([-0.05, 0.02, 0], [0.25, 0.23, 0.24], [0, 1, 0], 0)
-    const biceps = ellipsoidP([-0.08, -0.23, 0.07], [0.25, 0.27, 0.24], [0, 1, 0], 0)
+    const biceps = ellipsoidP([-0.08, -0.185, 0.07], [0.25, 0.25, 0.24], [0, 1, 0], 0)
     const f = new Field([deltoid, biceps], { k: 0.07 })
     return { sdf: f.sdf }
   },
@@ -76,8 +77,8 @@ export const lukaszForearm: SculptSpec = {
   build: () => {
     // short and round (Artur, 2026-09-24): a compact forearm, the fist close under the
     // elbow and a little forward — it reads as a ball, not a stick
-    const forearm = coneP([0, 0, 0], [0.01, -0.09, 0.07], 0.18, 0.17, 0)
-    const fist = ellipsoidP([0.015, -0.15, 0.1], [0.19, 0.18, 0.185], [0, 1, 0], 0)
+    const forearm = coneP([0, 0, 0], [0.01, -0.07, 0.07], 0.18, 0.17, 0)
+    const fist = ellipsoidP([0.015, -0.12, 0.1], [0.19, 0.17, 0.185], [0, 1, 0], 0)
     const f = new Field([forearm, fist], { k: 0.06 })
     return { sdf: f.sdf }
   },

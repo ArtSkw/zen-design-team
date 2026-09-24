@@ -458,9 +458,29 @@
 > `docs/set/plate/` (local); dead helpers, `maath`, the plate scripts and the dangling
 > `og:image` removed. The OpenGraph image is still a v1.0 item (it needs an absolute URL).
 >
+> **Round 24 (2026-09-24) — the title lets go into petals; shorter arms; initials.** Łukasz
+> P's arms are ~14 % shorter at the same girth (biceps −0.185, elbow −0.32, fist closer
+> under it). Surname initials carry a dot ("Łukasz P."). The title no longer fades: once
+> written and held, it lets go ON THE PAPER (`src/ui/TitleDust.tsx`, store flag `dissolve`
+> at `TITLE_MS`): a canvas above the curtain takes over pixel for pixel; the ink greys in a
+> smooth wash ahead of a left→right front, then erodes through an organic noise edge
+> (per-pixel, ~1.9 s); where it goes, petals are born dark and open into drawn ZenDS
+> petals (fine ink line on white, vein; hatched underside when they turn over) that fall
+> slowly, rocking like leaves, with a fine ink powder. Artur's direction after the first
+> cut: the dissolve must happen before the room shows, slower and subtler, petals soft and
+> hand-drawn (not tiles). The curtain lifts `DUST_LEAD` = 1.3 s into it, so the petals fall
+> over the revealed room; gone by ~3.8 s. `?dust=0` = the old fade, `?dust=hold` +
+> `window.__dust.seek(ms)` for frames; `scripts/debug-dust.mjs` (`--paper 0`, `--vp`,
+> `--dpr`). Perf fix found on the way: the room (`Rise`) and every Zenek root were
+> invisible until the intro, so all shaders compiled and buffers uploaded AT the reveal
+> (1.3–1.5 s frames on an M4). They are now drawn under the curtain during `loading`, and
+> `firstFrame` waits for `sculptsReady`: the reveal runs at 60 fps with one ~0.1 s frame
+> when the canvas first presents. Real-GPU probing: Playwright `channel: 'chromium'` with
+> `--use-angle=metal` (swiftshader starves the main thread; screencast frames are stale).
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
 > designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters and all quotes pending; JS
-> JS ≈ 380 KB gz in all (first chunk 79 KB), ~30 KB over the 350 budget in sum.
+> JS ≈ 383 KB gz in all (first chunk 82 KB), ~33 KB over the 350 budget in sum.
 
 ---
 

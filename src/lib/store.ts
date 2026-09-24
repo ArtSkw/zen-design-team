@@ -6,6 +6,7 @@ type State = {
   phase: Phase
   progress: number          // 0..1 loader progress
   loaded: boolean           // everything is in; the loader plays its completion
+  dissolve: boolean         // the written title lets go and turns into petals (TitleDust), still on the curtain
   posterLoaded: boolean
   fontsReady: boolean
   sculptsReady: boolean     // every baked hair and beard the cast wears is decoded
@@ -21,6 +22,7 @@ const state: State = {
   phase: 'loading',
   progress: 0,
   loaded: false,
+  dissolve: false,
   posterLoaded: false,
   fontsReady: false,
   sculptsReady: false,

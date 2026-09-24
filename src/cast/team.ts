@@ -36,7 +36,7 @@ const STONE = 0.36 - 0.09
 export const TEAM: Member[] = [
   // ---- designed ------------------------------------------------------------
   {
-    id: 'magda-r', name: 'Magda R', seed: 11,
+    id: 'magda-r', name: 'Magda R.', seed: 11,
     // docs/cast/magda-r.png (2026-09-23 redesign) — body circle (633, 670) px, R 388
     parts: [
       { type: 'sculpt', name: 'magda-r-hair', color: '#5f3c2b', clay: { freq: 80, amp: 0.14, sheenColor: '#dcae8e' }, traits: { crown: true, waveSide: 1 } },
@@ -70,7 +70,7 @@ export const TEAM: Member[] = [
     temperament: { breath: 1.0, blink: 0.9, sway: 1.1 }, quote: '',
   },
   // ---- designs pending: plain Zeneks hold the seats ---------------------------
-  { id: 'magda-j', name: 'Magda J', seed: 41, parts: [], seat: at(5.6, CUSHION, 6.2, 0.5), temperament: { breath: 1.1, blink: 1.0, sway: 1.0 }, quote: '' },
+  { id: 'magda-j', name: 'Magda J.', seed: 41, parts: [], seat: at(5.6, CUSHION, 6.2, 0.5), temperament: { breath: 1.1, blink: 1.0, sway: 1.0 }, quote: '' },
   { id: 'aneta', name: 'Aneta', seed: 43, parts: [], seat: at(7.6, CUSHION, 5.6, 0.3), temperament: { breath: 0.95, blink: 1.2, sway: 0.9 }, quote: '' },
   { id: 'edyta', name: 'Edyta', seed: 47, parts: [], seat: at(1.55, BENCH, 4.4, 0.95), temperament: { breath: 1.05, blink: 0.9, sway: 1.1 }, quote: '' },
   { id: 'karol', name: 'Karol', seed: 53, parts: [], seat: at(1.55, BENCH, 6.6, 1.05), temperament: { breath: 0.9, blink: 1.0, sway: 1.2 }, quote: '' },
@@ -81,12 +81,12 @@ export const TEAM: Member[] = [
     face: { plate: { a: 0.72, b: 0.455, y: 0.32 }, eye: { dx: 0.18, y: 0.08 } },
     seat: at(8.2, 0, 7.6, 0.4), temperament: { breath: 1.15, blink: 0.85, sway: 1.0 }, quote: '',
   },
-  { id: 'lukasz-d', name: 'Łukasz D', seed: 61, parts: [], seat: at(10.0, STEP_UPPER, 9.9, 0.25), temperament: { breath: 1.0, blink: 1.1, sway: 0.85 }, quote: '' },
+  { id: 'lukasz-d', name: 'Łukasz D.', seed: 61, parts: [], seat: at(10.0, STEP_UPPER, 9.9, 0.25), temperament: { breath: 1.0, blink: 1.1, sway: 0.85 }, quote: '' },
   {
     // docs/cast/lukasz-p.png — body circle (624, 645) px, R 369 (fitted); the weight lifter
-    id: 'lukasz-p', name: 'Łukasz P', seed: 67,
+    id: 'lukasz-p', name: 'Łukasz P.', seed: 67,
     parts: [{ type: 'sculpt', name: 'lukasz-p-hair', color: '#bd9360', clay: { freq: 130, amp: 0.22, sheenColor: '#ffe6c2' }, traits: { crown: true } }],
-    arms: { upper: 'lukasz-p-upperarm', fore: 'lukasz-p-forearm', shoulder: [-1.03, 0.0, 0.1], elbow: [-0.08, -0.4, 0.07], scale: 1.12 },
+    arms: { upper: 'lukasz-p-upperarm', fore: 'lukasz-p-forearm', shoulder: [-1.03, 0.0, 0.1], elbow: [-0.08, -0.32, 0.07], scale: 1.12 },
     face: { plate: { a: 0.664, b: 0.42, y: 0.249 }, eye: { dx: 0.183, y: 0.046, rx: 0.095, ry: 0.119 } },
     seat: at(8.4, 0, 2.2, 0.7), temperament: { breath: 0.85, blink: 1.0, sway: 1.0 }, quote: '',
   },
@@ -119,7 +119,7 @@ export const TEAM: Member[] = [
   { id: 'mirek', name: 'Mirek', seed: 73, parts: [], seat: at(5.0, 0, 1.9, -0.3), temperament: { breath: 1.2, blink: 1.0, sway: 0.9 }, quote: '' },
   {
     // docs/cast/mateusz-n.png — body circle (626, 624) px, R 419
-    id: 'mateusz-n', name: 'Mateusz N', seed: 79,
+    id: 'mateusz-n', name: 'Mateusz N.', seed: 79,
     parts: [
       { type: 'sculpt', name: 'mateusz-n-hair', color: '#3a2e29', clay: { freq: 120, amp: 0.34, sheenColor: '#9a8578' }, traits: { crown: true } },
       { type: 'sculpt', name: 'mateusz-n-beard', color: '#2c2927', clay: { freq: 190, amp: 0.3, sheen: 0.6, sheenColor: '#8d8580' } },
@@ -131,7 +131,7 @@ export const TEAM: Member[] = [
   },
   {
     // docs/cast/mateusz-k.png (the 2026-09-24 design) — body circle (700, 640) px, R 410 (fitted); frontal coordinates are fractions of R
-    id: 'mateusz-k', name: 'Mateusz K', seed: 83,
+    id: 'mateusz-k', name: 'Mateusz K.', seed: 83,
     parts: [
       { type: 'sculpt', name: 'mateusz-k-hair', color: '#1f1814', clay: { freq: 110, amp: 0.12, roughness: 0.42, sheen: 0.4, sheenColor: '#a89080' }, traits: { crown: true } },
       {
