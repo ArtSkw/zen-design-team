@@ -29,7 +29,7 @@ export const LINES: Record<string, string[]> = {
     'Może i krypto, ale nie Zondacrypto.',
     'Widzieliście tę promkę ostatnio na Aliexpress?',
     'No, japoński ramen to to nie jest...',
-    'Rowerem zawsze spoko!',
+    'Rowerkiem ta trasa jest git.',
   ],
   'lukasz-d': [
     'Dziś wrócił mi temat onboardingu...',
@@ -53,7 +53,7 @@ export const LINES: Record<string, string[]> = {
     'Warsztaty z interesariuszami zaowocowały wyjątkowym feedbackiem...',
     'Ja się już tylko śmieję.',
     'Myślę, że Mateusz może powtórzyć to samo.',
-    'Wyszło mega, a i tak to pewnie ubiją.',
+    'Wygląda to mega, a i tak to pewnie ubiją.',
   ],
   janek: [
     'Testowałem ten model, tak średnio bym powiedział...',
@@ -68,7 +68,7 @@ export const LINES: Record<string, string[]> = {
     'Po warsztatach wyszło, że to usuwamy.',
   ],
   'mateusz-n': [
-    'Dla mnie mega spoko!',
+    'Kto jest tam PO?',
     'Ile kroków jeszcze zostało...?',
     'Machnę te widoki i lecę do młodego.',
     'No, Claude mi to lepiej zrobił.',

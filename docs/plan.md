@@ -544,7 +544,7 @@
 > a wrapped bubble is narrowed to its longest balanced line (measured once per line —
 > before, a two-line bubble kept the full 300 px with an empty band at the right). The
 > live region is now a hidden `aria-live` paragraph ("Name: line"); the visual bubbles are
-> `aria-hidden`. Łukasz D. is shown as "Łukasz Dz.", as in Artur's list. Tools:
+> `aria-hidden`. Łukasz D. is shown as "Łukasz D." (Artur corrected "Łukasz Dz." on 2026-09-25). Tools:
 > `scripts/debug-lines.mjs [reduce]` (timeline of taps, timeouts, exits),
 > `scripts/lines-sheet.mjs [phone]` (every line in its bubble → `shots/lines-*.png`),
 > `scripts/debug-bubble-anim.mjs` (the motions scrubbed frame by frame).

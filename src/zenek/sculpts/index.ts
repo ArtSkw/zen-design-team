@@ -7,6 +7,7 @@ import { magdaHair, magdaTie } from './magda-r'
 import { janekHair } from './janek'
 import { lukaszForearm, lukaszHair, lukaszUpperArm } from './lukasz-p'
 import { mateuszKHair } from './mateusz-k'
+import { anetaCollar, anetaHair, anetaInner, anetaShirt } from './aneta'
 
 // Every baked accessory, by name (the file is public/sculpts/<name>.bin).
 export const SCULPTS: Record<string, SculptSpec> = {
@@ -23,4 +24,8 @@ export const SCULPTS: Record<string, SculptSpec> = {
   'lukasz-p-upperarm': lukaszUpperArm,
   'lukasz-p-forearm': lukaszForearm,
   'mateusz-k-hair': mateuszKHair,
+  'aneta-hair': anetaHair,
+  'aneta-shirt': anetaShirt,
+  'aneta-collar': anetaCollar,
+  'aneta-inner': anetaInner,
 }

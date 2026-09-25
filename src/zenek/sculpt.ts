@@ -190,12 +190,46 @@ export class Field {
     public opts: { k?: number; kGroups?: number; base?: Sdf; kBase?: number; carve?: Sdf; kCarve?: number; clip?: Sdf; kClip?: number } = {},
   ) {}
 
+  // A uniform grid of the primitives (each listed in every cell its bounding sphere comes
+  // within PAD of), so a point is tested against its neighbours, not against thousands.
+  // The loop below already skipped anything further than best + 0.12, so the field is
+  // unchanged as far out as the bake samples it (the baked files come out byte for byte
+  // the same, several times faster).
+  private grid: { min: V3; n: [number, number, number]; cells: Prim[][] } | null = null
+  private near(x: number, y: number, z: number): Prim[] {
+    const CELL = 0.1
+    const PAD = 0.3
+    if (!this.grid) {
+      const min: V3 = [Infinity, Infinity, Infinity]
+      const max: V3 = [-Infinity, -Infinity, -Infinity]
+      for (const p of this.prims)
+        for (let c = 0; c < 3; c++) {
+          min[c] = Math.min(min[c], p.c[c] - p.r - PAD)
+          max[c] = Math.max(max[c], p.c[c] + p.r + PAD)
+        }
+      const n: [number, number, number] = [0, 1, 2].map((c) => Math.max(1, Math.ceil((max[c] - min[c]) / CELL))) as [number, number, number]
+      const cells: Prim[][] = Array.from({ length: n[0] * n[1] * n[2] }, () => [])
+      for (const p of this.prims) {
+        const lo = [0, 1, 2].map((c) => Math.max(0, Math.floor((p.c[c] - p.r - PAD - min[c]) / CELL)))
+        const hi = [0, 1, 2].map((c) => Math.min(n[c] - 1, Math.floor((p.c[c] + p.r + PAD - min[c]) / CELL)))
+        for (let i = lo[0]; i <= hi[0]; i++) for (let j = lo[1]; j <= hi[1]; j++) for (let k = lo[2]; k <= hi[2]; k++) cells[i + n[0] * (j + n[1] * k)].push(p)
+      }
+      this.grid = { min, n, cells }
+    }
+    const { min, n, cells } = this.grid
+    const i = Math.floor((x - min[0]) / CELL)
+    const j = Math.floor((y - min[1]) / CELL)
+    const k = Math.floor((z - min[2]) / CELL)
+    if (i < 0 || j < 0 || k < 0 || i >= n[0] || j >= n[1] || k >= n[2]) return []
+    return cells[i + n[0] * (j + n[1] * k)]
+  }
+
   sdf: Sdf = (x, y, z) => {
     const { k = 0.03, kGroups = 0.04, base, kBase = 0.05, carve, kCarve = 0.02, clip, kClip = 0 } = this.opts
     const groups = new Map<number, number>()
     const b = base ? base(x, y, z) : 1e9
     let best = b
-    for (const p of this.prims) {
+    for (const p of this.near(x, y, z)) {
       const bound = Math.hypot(x - p.c[0], y - p.c[1], z - p.c[2]) - p.r
       if (bound > best + 0.12) continue // far beyond anything a smooth union could reach
       const d = p.d(x, y, z)

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
-import { BufferGeometry, CatmullRomCurve3, Color, DoubleSide, ExtrudeGeometry, Float32BufferAttribute, InstancedMesh, LatheGeometry, Matrix4, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, Quaternion, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector2, Vector3, type Material } from 'three'
+import { BufferGeometry, CatmullRomCurve3, CircleGeometry, Color, DoubleSide, ExtrudeGeometry, Float32BufferAttribute, InstancedMesh, LatheGeometry, Matrix4, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, Quaternion, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector2, Vector3, type Material } from 'three'
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { mulberry32 } from '../lib/rng'
 import { taperedTube } from './geometry'
 import { ghostOf } from './materials'
@@ -280,6 +281,43 @@ export function Headphones({ R, ghost, pitch = 9, yaw = 80, cupH = 0.62, cupW = 
           </group>
         )
       })}
+    </group>
+  )
+}
+
+// ---- shirt buttons ------------------------------------------------------------------------
+/**
+ * Four-hole buttons sewn on a shirt front: a lathed disc with a rim and a dished middle,
+ * lying on the cloth at frontal design coordinates `at`, `lift` off the body (the cloth's
+ * thickness).
+ */
+export function Buttons({ R, ghost, at, lift, color = '#ebe4d2', size = 0.034 }: { R: number; ghost: boolean; at: [number, number][]; lift: number; color?: string; size?: number }) {
+  const g = useMemo(() => {
+    const k = size
+    const disc = new LatheGeometry(
+      [new Vector2(0.0001, 0.2 * k), new Vector2(0.45 * k, 0.24 * k), new Vector2(0.72 * k, 0.36 * k), new Vector2(0.9 * k, 0.4 * k), new Vector2(1.0 * k, 0.26 * k), new Vector2(0.98 * k, 0), new Vector2(0.0001, 0)].reverse(),
+      32,
+    )
+    const hole = new CircleGeometry(0.075 * k, 10).rotateX(-Math.PI / 2)
+    // all the buttons one mesh, all their holes another: two draw calls
+    const discs: BufferGeometry[] = []
+    const holes: BufferGeometry[] = []
+    const mtx = new Matrix4()
+    for (const [x, y] of at) {
+      const [yaw, pitch] = fromFront(x, y)
+      const n = onHead(yaw, pitch, 1)
+      mtx.compose(n.clone().multiplyScalar(lift), new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), n), new Vector3(1, 1, 1))
+      discs.push(disc.clone().applyMatrix4(mtx))
+      for (const [u, v] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) holes.push(hole.clone().translate(u * 0.2 * k, 0.215 * k, v * 0.2 * k).applyMatrix4(mtx))
+    }
+    return { discs: mergeGeometries(discs), holes: mergeGeometries(holes) }
+  }, [at, lift, size])
+  const mat = useMemo(() => new MeshPhysicalMaterial({ color: new Color(color), roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.3 }), [color])
+  const holeMat = useMemo(() => new MeshStandardMaterial({ color: '#5f5a4e', roughness: 0.8 }), [])
+  return (
+    <group scale={R}>
+      <mesh geometry={g.discs} material={m(mat, ghost)} raycast={noRaycast} />
+      {!ghost && <mesh geometry={g.holes} material={holeMat} raycast={noRaycast} />}
     </group>
   )
 }

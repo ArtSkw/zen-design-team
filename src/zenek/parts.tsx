@@ -6,7 +6,9 @@ import { ghostOf, matte, metal } from './materials'
 import { mulberry32, range } from '../lib/rng'
 import { clay, type ClayOpts } from './clay'
 import { useSculpt } from './sculptAsset'
-import { Headphones, SkinPatch, Stubble, SunglassesRect, type StubbleRegion } from './kit'
+import { Buttons, Headphones, SkinPatch, Stubble, SunglassesRect, type StubbleRegion } from './kit'
+import { plaid } from './plaid'
+import { Cap } from './cap'
 
 // One bespoke reconstruction per approved design (docs/cast/*.png).
 export type PartConfig =
@@ -19,6 +21,11 @@ export type PartConfig =
   | { type: 'skin'; at: [number, number]; size: [number, number]; color: string; opacity: number }
   | { type: 'sunglasses-rect'; top: number; bottom: number; inner: number; outer: number; rim: number; bend?: number }
   | { type: 'headphones'; pitch?: number; cupH?: number; cupW?: number }
+  // a six-panel cap worn backwards (src/zenek/cap.tsx), head frame
+  | { type: 'cap'; color: string; under?: string }
+  // a garment: a baked sculpt in the tartan (src/zenek/plaid.ts), head frame
+  | { type: 'shirt'; name: string; axis?: 'body' | 'collar'; shade?: number }
+  | { type: 'buttons'; at: [number, number][]; lift: number; color?: string }
 
 // Face parts live in the plate frame (arc coords around the plate centre);
 // head parts live in the head frame (yaw/pitch on the body sphere, or the frontal plane).
@@ -38,7 +45,7 @@ export function headTraits(parts: PartConfig[]): HeadTraits {
   const t: HeadTraits = { crown: false, longSides: false, front: false }
   for (const p of parts) {
     if (p.type === 'sculpt') Object.assign(t, p.traits)
-    if (p.type === 'headphones') t.crown = true
+    if (p.type === 'headphones' || p.type === 'cap') t.crown = true
   }
   return t
 }
@@ -167,8 +174,18 @@ function SculptPart({ cfg, ctx }: { cfg: Extract<PartConfig, { type: 'sculpt' }>
   return <mesh geometry={g} material={m(mat, ctx.ghost)} scale={ctx.R} raycast={ctx.ghost ? noRaycast : undefined} castShadow />
 }
 
+function ShirtPart({ name, axis = 'body', shade, ctx }: { name: string; axis?: 'body' | 'collar'; shade?: number; ctx: PartCtx }) {
+  const g = useSculpt(name)
+  if (!g) return null
+  return <mesh geometry={g} material={m(plaid({ axis, shade }), ctx.ghost)} scale={ctx.R} raycast={ctx.ghost ? noRaycast : undefined} castShadow receiveShadow />
+}
+
 export function Part({ cfg, ctx }: { cfg: PartConfig; ctx: PartCtx }) {
   switch (cfg.type) {
+    case 'shirt':
+      return <ShirtPart name={cfg.name} axis={cfg.axis} shade={cfg.shade} ctx={ctx} />
+    case 'buttons':
+      return <Buttons R={ctx.R} ghost={ctx.ghost} at={cfg.at} lift={cfg.lift} color={cfg.color} />
     case 'sculpt':
       return <SculptPart cfg={cfg} ctx={ctx} />
     case 'stubble':
@@ -179,6 +196,8 @@ export function Part({ cfg, ctx }: { cfg: PartConfig; ctx: PartCtx }) {
       return <SunglassesRect R={ctx.R} ghost={ctx.ghost} top={cfg.top} bottom={cfg.bottom} inner={cfg.inner} outer={cfg.outer} rim={cfg.rim} bend={cfg.bend} />
     case 'headphones':
       return <Headphones R={ctx.R} ghost={ctx.ghost} pitch={cfg.pitch} cupH={cfg.cupH} cupW={cfg.cupW} />
+    case 'cap':
+      return <Cap R={ctx.R} ghost={ctx.ghost} color={cfg.color} under={cfg.under} />
     case 'face-janek':
       return <FaceJanek ctx={ctx} />
     case 'glasses-round':

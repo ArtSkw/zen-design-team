@@ -70,7 +70,19 @@ export const TEAM: Member[] = [
   },
   // ---- designs pending: plain Zeneks hold the seats ---------------------------
   { id: 'magda-j', name: 'Magda J.', seed: 41, parts: [], seat: at(5.6, CUSHION, 6.2, 0.5), temperament: { breath: 1.1, blink: 1.0, sway: 1.0 } },
-  { id: 'aneta', name: 'Aneta', seed: 43, parts: [], seat: at(7.6, CUSHION, 5.6, 0.3), temperament: { breath: 0.95, blink: 1.2, sway: 0.9 } },
+  {
+    // docs/cast/aneta.png — the drawn body is a touch tall: read on an ellipse centred (637, 720) px, 408 across, 435 up
+    id: 'aneta', name: 'Aneta', seed: 43,
+    parts: [
+      { type: 'sculpt', name: 'aneta-hair', color: '#3f2e23', clay: { freq: 105, amp: 0.12, sheenColor: '#dcc3a4', tip: '#7c5e41', tipY: [0.95, 0.15] }, traits: { crown: true } },
+      { type: 'shirt', name: 'aneta-shirt' },
+      { type: 'shirt', name: 'aneta-collar', axis: 'collar' },
+      { type: 'shirt', name: 'aneta-inner', shade: 0.28 },
+      { type: 'buttons', at: [[-0.265, -0.235], [-0.13, -0.44], [-0.13, -0.7]], lift: 1.05, color: '#f1e9d6' }, // on the left front's placket (frontal, R)
+    ],
+    face: { plate: { a: 0.675, b: 0.461, y: 0.528 }, eye: { dx: 0.18, y: 0.272, rx: 0.086, ry: 0.103 } },
+    seat: at(7.6, CUSHION, 5.6, 0.3), temperament: { breath: 0.95, blink: 1.2, sway: 0.9 },
+  },
   { id: 'edyta', name: 'Edyta', seed: 47, parts: [], seat: at(1.55, BENCH, 4.4, 0.95), temperament: { breath: 1.05, blink: 0.9, sway: 1.1 } },
   { id: 'karol', name: 'Karol', seed: 53, parts: [], seat: at(1.55, BENCH, 6.6, 1.05), temperament: { breath: 0.9, blink: 1.0, sway: 1.2 } },
   {
@@ -78,9 +90,15 @@ export const TEAM: Member[] = [
     id: 'kamil', name: 'Kamil', seed: 59,
     parts: [{ type: 'sculpt', name: 'kamil-hair', color: '#b89673', clay: { freq: 95, amp: 0.34 }, traits: { crown: true } }],
     face: { plate: { a: 0.72, b: 0.455, y: 0.32 }, eye: { dx: 0.18, y: 0.08 } },
-    seat: at(8.2, 0, 7.6, 0.4), temperament: { breath: 1.15, blink: 0.85, sway: 1.0 },
+    seat: at(13.2, 0, 1.8, 0.2), temperament: { breath: 1.15, blink: 0.85, sway: 1.0 }, // out on the terrace with Artur and Mateusz N (the room was crowded)
   },
-  { id: 'lukasz-d', name: 'Łukasz Dz.', seed: 61, parts: [], seat: at(10.0, STEP_UPPER, 9.9, 0.25), temperament: { breath: 1.0, blink: 1.1, sway: 0.85 } },
+  {
+    // docs/cast/lukasz-d.png — body circle (625, 702) px, R 413 (fitted); an olive six-panel cap worn backwards (docs/cast/lukasz-d-cap-ref.png)
+    id: 'lukasz-d', name: 'Łukasz D.', seed: 61,
+    parts: [{ type: 'cap', color: '#85846a' }],
+    face: { plate: { a: 0.685, b: 0.37, y: 0.178 }, eye: { dx: 0.184, y: -0.005, rx: 0.091, ry: 0.107 } },
+    seat: at(10.0, STEP_UPPER, 9.9, 0.25), temperament: { breath: 1.0, blink: 1.1, sway: 0.85 },
+  },
   {
     // docs/cast/lukasz-p.png — body circle (624, 645) px, R 369 (fitted); the weight lifter
     id: 'lukasz-p', name: 'Łukasz P.', seed: 67,
@@ -149,7 +167,7 @@ export const TEAM: Member[] = [
     ],
     // the plate reaches down round the mouth, as drawn
     face: { plate: { a: 0.78, b: 0.6, y: 0.2 }, eye: { dx: 0.22, y: 0.122, rx: 0.085, ry: 0.116 } },
-    seat: at(11.1, 0, 7.3, 0.5), temperament: { breath: 1.05, blink: 1.0, sway: 1.05 },
+    seat: at(7.4, STEP_UPPER, 9.95, 0.35), temperament: { breath: 1.05, blink: 1.0, sway: 1.05 }, // on the upper platform beside Łukasz D, out of the crowd (in Kamil's old place Magda R hid his face from the home view)
   },
 ]
 
@@ -157,14 +175,14 @@ export const byId = (id: string) => TEAM.find((mm) => mm.id === id)
 
 // Who chats with whom: small circles that take turns (src/zenek/social.ts). Janek
 // sits apart on the platform and keeps an eye on the room; Artur hosts from the
-// terrace edge — half to Mateusz N, half to whoever is looking.
+// terrace edge — half to Mateusz N and Kamil beside him, half to whoever is looking.
 export const CIRCLES: string[][] = [
   ['krystian', 'mirek'],
   ['edyta', 'karol'],
-  ['magda-j', 'aneta', 'kamil'],
+  ['magda-j', 'aneta'],
   ['magda-r', 'lukasz-p'],
   ['lukasz-d', 'mateusz-k'],
-  ['artur', 'mateusz-n'],
+  ['artur', 'mateusz-n', 'kamil'],
 ]
 
 // Entrance wave: back first, Artur last.

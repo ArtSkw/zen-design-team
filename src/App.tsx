@@ -50,7 +50,7 @@ function useBoot() {
     if (DEBUG.hold && DEBUG.done) setTimeout(() => store.set({ loaded: true }), 300)
     const fontsTimeout = setTimeout(() => store.set({ fontsReady: true }), 4000)
     // nobody arrives half-dressed: the loader waits for every baked sculpt the cast wears
-    const sculpts = [...new Set(TEAM.flatMap((mm) => [...mm.parts.flatMap((p) => (p.type === 'sculpt' ? [p.name] : [])), ...(mm.arms ? [mm.arms.upper, mm.arms.fore] : [])]))]
+    const sculpts = [...new Set(TEAM.flatMap((mm) => [...mm.parts.flatMap((p) => (p.type === 'sculpt' || p.type === 'shirt' ? [p.name] : [])), ...(mm.arms ? [mm.arms.upper, mm.arms.fore] : [])]))]
     import('./zenek/sculptAsset')
       .then((m) => m.preloadSculpts(sculpts))
       .then(() => store.set({ sculptsReady: true }))

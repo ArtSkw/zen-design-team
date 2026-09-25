@@ -19,7 +19,8 @@ export const LIMITS = {
   minDist: 10,
   maxDist: 52,
   minPolar: rad(30),
-  maxPolar: rad(84),
+  // the lab may look level (?el=0), so a design is compared face on; the room stops at 6° above
+  maxPolar: rad(P.str('lab', '') ? 90 : 84),
   minAz: rad(-50),
   maxAz: rad(115),
 }
