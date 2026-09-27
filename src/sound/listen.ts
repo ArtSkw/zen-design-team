@@ -11,10 +11,10 @@ import * as syn from './synth'
 
 const GROUPS: [string, Cue[]][] = [
   ['What you set off', ['click', 'splash', 'plip', 'bowl']],
-  ['The intro', ['pen', 'dot', 'air', 'bell', 'kalimba']],
+  ['The intro', ['pen', 'dot', 'air', 'kalimba']],
   ['The world', ['lake', 'breeze', 'songbird', 'uguisu', 'gulls', 'fish']],
 ]
-const BUS: Record<Cue, BusName> = { click: 'ui', bowl: 'ui', splash: 'toy', plip: 'toy', kalimba: 'toy', pen: 'title', dot: 'title', air: 'title', bell: 'title', lake: 'near', breeze: 'far', songbird: 'far', uguisu: 'far', gulls: 'far', fish: 'far' }
+const BUS: Record<Cue, BusName> = { click: 'ui', bowl: 'ui', splash: 'toy', plip: 'toy', kalimba: 'toy', pen: 'title', dot: 'title', air: 'title', lake: 'near', breeze: 'far', songbird: 'far', uguisu: 'far', gulls: 'far', fish: 'far' }
 /** What the room plays now (public/sound/picks.json): checked to begin with, and marked. */
 const live = ((await (await fetch('/sound/picks.json')).json()) ?? {}) as Record<string, Take[]>
 const MINE: Record<string, number[]> = Object.fromEntries(Object.entries(live).map(([cue, takes]) => [cue, takes.map((t) => Number(t.file.match(/-(\d+)\.mp3$/)?.[1]))]))
@@ -72,15 +72,11 @@ function one(cue: Cue, take: Take, buf: AudioBuffer, at: number, { level = 1, ra
   return len
 }
 
-/** The way the room uses each cue: a bell struck two or three times, the arrival's run, a bed for a while. */
+/** The way the room uses each cue: the arrival's run, the air slowed under the petals, a bed for a while. */
 async function hear(cue: Cue, take: Take) {
   const buf = await load(cue, take)
   const t = audio().ctx.currentTime + 0.05
-  if (cue === 'bell') {
-    const rate = take.hz ? inKey(take.hz) / take.hz : 1
-    ;[1, 0.62, 0.4].forEach((level, i) => one(cue, take, buf, t + i * 0.45, { level, rate }))
-    return 2.5
-  }
+  if (cue === 'air') return one(cue, take, buf, t, { rate: 0.85 }) // as the room plays it, under the falling petals
   if (cue === 'kalimba' && take.hz) {
     for (let i = 0; i < 14; i++) one(cue, take, buf, t + i * 0.07, { level: i === 13 ? 1 : 0.6, rate: hz(i - 3) / take.hz })
     return 2.5
@@ -102,7 +98,6 @@ function standIn(cue: Cue) {
     case 'bowl': return syn.bell(o, hz(5), t, { kind: 'bowl', level: 0.7 })
     case 'dot': return syn.dot(o, t)
     case 'air': return syn.swish(o, t, { dur: 2.2, from: 420, to: 2600, q: 0.7, level: 0.07, pan: -0.2, panTo: 0.25 })
-    case 'bell': return [10, 12, 11].forEach((d, i) => syn.bell(o, hz(d), t + 0.12 + i * 0.45, { kind: 'glass', level: 0.8 }))
     case 'kalimba': for (let i = 0; i < 14; i++) syn.pluck(o, hz(i - 3), t + i * 0.07, { vel: 0.6, bright: 0.8, decay: 0.8 }); return
     case 'fish': return syn.plop(o, t, { level: 0.45 })
     case 'songbird': return void syn.songbird(o, t, { rng })

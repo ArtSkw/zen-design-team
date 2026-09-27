@@ -5,9 +5,11 @@
 //   node scripts/sfx-publish.mjs "lake:3+1,breeze:1+2,…"
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
-// measured 2026-09-27 through the mix: each lake stretch to −38 LUFS, each breeze stretch to
-// −41 (three under the lake: near water, far air)
-const LEVEL = { 'lake-1': 1.06, 'lake-3': 0.94, 'breeze-1': 0.99, 'breeze-2': 1.5 }
+// measured 2026-09-27 through the mix, evening each cue's takes: each lake stretch at −41.5
+// LUFS (calmed: src/sound/samples.ts), each breeze stretch at −41
+const LEVEL = { 'lake-1': 1.04, 'lake-3': 0.96, 'breeze-1': 0.99, 'breeze-2': 1.5 }
+// where a take is played shorter than measured: dot-1 holds three taps, the i's dot is one
+const TRIM = { 'dot-1': { end: 0.16 } }
 
 const line = process.argv[2]
 if (!line) throw new Error('usage: node scripts/sfx-publish.mjs "cue:n+m,…"')
@@ -19,7 +21,7 @@ for (const part of line.split(',')) {
     const take = index[cue]?.[n]
     if (!take) throw new Error(`no take ${cue}-${n} in sound-raw/index.json`)
     const name = `${cue}-${n}`
-    ;(picks[cue] ??= []).push({ ...take, ...(LEVEL[name] ? { level: LEVEL[name] } : {}) })
+    ;(picks[cue] ??= []).push({ ...take, ...(TRIM[name] ?? {}), ...(LEVEL[name] ? { level: LEVEL[name] } : {}) })
   }
 }
 mkdirSync('public/sound', { recursive: true })

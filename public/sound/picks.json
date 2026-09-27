@@ -8,7 +8,7 @@
    "rms": 0.01797,
    "seconds": 30,
    "start": 0,
-   "level": 0.94
+   "level": 0.96
   },
   {
    "end": 30,
@@ -18,7 +18,7 @@
    "rms": 0.01743,
    "seconds": 30,
    "start": 0,
-   "level": 1.06
+   "level": 1.04
   }
  ],
  "breeze": [
@@ -212,15 +212,6 @@
  "pen": [
   {
    "end": 10,
-   "file": "pen-1.mp3",
-   "loop": true,
-   "peak": 0.1237,
-   "rms": 0.00766,
-   "seconds": 10,
-   "start": 0
-  },
-  {
-   "end": 10,
    "file": "pen-2.mp3",
    "loop": true,
    "peak": 0.0408,
@@ -231,7 +222,7 @@
  ],
  "dot": [
   {
-   "end": 0.48,
+   "end": 0.16,
    "file": "dot-1.mp3",
    "hz": 644.65,
    "loop": false,
@@ -239,18 +230,6 @@
    "rms": 0.01813,
    "seconds": 0.48,
    "start": 0.0238
-  }
- ],
- "bell": [
-  {
-   "end": 3,
-   "file": "bell-3.mp3",
-   "hz": 2827.58,
-   "loop": false,
-   "peak": 0.8431,
-   "rms": 0.05589,
-   "seconds": 3,
-   "start": 0
   }
  ],
  "air": [

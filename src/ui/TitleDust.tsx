@@ -21,6 +21,12 @@ const VIEW = { x: 0, y: -2, w: 627, h: 58 } // the title card's viewBox (TitleCa
 export const DUST_REST = 30
 /** ms from the title letting go to the curtain lifting (App). */
 export const DUST_LEAD = 1300
+/**
+ * ms from the title letting go to its petals visibly falling: the first are born ~140 ms in
+ * and open over OPEN, drifting a few px; by ~800 ms they have opened and fallen ~20 px (the
+ * air under them begins here: src/sound/cues.ts).
+ */
+export const PETALS_FALLING = 800
 
 // the ink leaving, ms
 const SWEEP = 1150 // for the front to cross the title

@@ -21,7 +21,7 @@ type Loaded = { take: Take; buf: AudioBuffer }
  */
 export const TARGET = {
   click: 0.21, splash: 0.27, plip: 0.32, bowl: 0.26, // what the visitor sets off
-  pen: 0.2, dot: 0.11, bell: 0.25, air: 0.1, kalimba: 0.44, // the intro
+  pen: 0.2, dot: 0.11, air: 0.1, kalimba: 0.44, // the intro
   fish: 0.066, songbird: 0.046, uguisu: 0.05, gulls: 0.053, // the world, passing (their echo adds to their peaks)
   lake: 0.0116, breeze: 0.053, // the world, always (RMS of the take; the breeze's is mostly the rumble it loses)
 } as const // calibrated through the mix, 2026-09-27 (scripts/sound-render.mjs: takes, takebed)
@@ -165,15 +165,31 @@ export function bed(o: Out, cue: 'lake' | 'breeze', t: number): Bed | null {
   // the breeze's recordings are mostly wind rumble, heard as nothing but felt as weight: it
   // goes, and the air above it (what the ear hears) comes up to its level (TARGET)
   let into: AudioNode = master
-  if (cue === 'breeze')
-    for (let i = 0; i < 2; i++) {
-      const hp = ctx.createBiquadFilter()
-      hp.type = 'highpass'
-      hp.frequency.value = 150
-      hp.Q.value = 0.707
-      hp.connect(into)
-      into = hp
-    }
+  const filter = (type: BiquadFilterType, f: number) => {
+    const b = ctx.createBiquadFilter()
+    b.type = type
+    b.frequency.value = f
+    b.Q.value = 0.707
+    b.connect(into)
+    into = b
+  }
+  if (cue === 'breeze') (filter('highpass', 150), filter('highpass', 150))
+  if (cue === 'lake') {
+    // the lake is calm (owner-directed 2026-09-27): its bigger sloshes, which read as someone
+    // moving in the water, are held down, and the bright splash of each lap is rounded off
+    filter('lowpass', 2200)
+    const calm = ctx.createDynamicsCompressor()
+    calm.threshold.value = -34
+    calm.knee.value = 10
+    calm.ratio.value = 4
+    calm.attack.value = 0.004
+    calm.release.value = 0.35
+    calm.connect(into)
+    into = calm
+    // the compressor adds its own make-up gain; taken back after it, so the calming is the
+    // same whatever the level, and the lake sits at −41.5 LUFS (was −38.5: quieter, owner-directed)
+    master.gain.value = 0.25
+  }
   const n = 64
   const up = new Float32Array(n)
   const down = new Float32Array(n)

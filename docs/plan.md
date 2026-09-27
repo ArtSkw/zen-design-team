@@ -1090,6 +1090,12 @@ room; Artur shares the link.
     `sound-raw/`, and `listen.html` plays every take through the room's mix beside its
     stand-in and builds that link. The Zeneks' boop stays synthesised (owner-directed); the
     first chime takes were too busy, single-strike bells replace them.
+  - Round 2 of the recordings (2026-09-27, owner-directed): the lake calmed — low-passed at
+    2.2 kHz and gently compressed (threshold −34, 4:1; its make-up gain taken back after),
+    at −41.5 LUFS; one pen, pen-2 (Artur: it keeps up with the hand; pen-1 is too calm — peak
+    levelling had favoured its sparse bursts); dot-1 trimmed to its first tap (`TRIM` in sfx-publish);
+    the bell at the let-go removed; the air starts at `PETALS_FALLING` (TitleDust, 800 ms)
+    at 0.85× so its swell lasts the fall. Now 27 takes, 2.76 MB.
   - Published 2026-09-27 (Artur's picks, 29 takes, 2.97 MB, fetched low behind the room):
     `node scripts/sfx-publish.mjs "lake:3+1,…"`. The beds are levelled as the ear hears
     them (`scripts/loudness.py`, BS.1770 LUFS; plain RMS overrated the breeze, which was

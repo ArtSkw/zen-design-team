@@ -6,6 +6,7 @@ import { SOUND, bus, duck, ear, note, now, onTurn, play, setSoundOn, whenRunning
 import * as syn from './synth'
 import * as rec from './samples'
 import { hz } from './key'
+import { PETALS_FALLING } from '../ui/TitleDust'
 
 // What the app sounds like, and when (direction A, 2026-09-27: wood, water, air and one
 // bell for the world; the Zeneks sound like toys). Nothing sounds without a reason: every
@@ -141,30 +142,20 @@ function dot() {
   note('dot')
   if (!rec.shot(o, 'dot', o.ctx.currentTime)) syn.dot(o, o.ctx.currentTime)
 }
-/** The written title lets go into petals: the pen is put down, a breath of air, the glass bell. */
+/**
+ * The written title lets go into petals: the pen is put down, and a breath of air carries
+ * them — not as the ink starts to leave, but as the petals are seen to fall (owner-directed
+ * 2026-09-27; the bell that rang here is gone: it meant nothing the page could show).
+ */
 function letGo() {
   quill?.stop(now())
   quill = null
   const o = bus('title')
   if (!o) return
-  const t = o.ctx.currentTime
+  const t = o.ctx.currentTime + PETALS_FALLING / 1000
   note('letgo')
-  if (!rec.shot(o, 'air', t)) syn.swish(o, t, { dur: 2.2, from: 420, to: 2600, q: 0.7, level: 0.07, pan: -0.2, panTo: 0.25 })
-  if (rec.has('bell')) {
-    // the recorded furin, struck two or three times as a breeze would, each softer, in key
-    let at = t + 0.12
-    for (const level of Math.random() < 0.5 ? [1, 0.6] : [1, 0.62, 0.4]) {
-      rec.shot(o, 'bell', at, { level, tuned: true, pan: Math.random() * 0.5 - 0.25 })
-      at += 0.3 + Math.random() * 0.4
-    }
-    return
-  }
-  const notes = [10, 12, 13, 11, 14].sort(() => Math.random() - 0.5).slice(0, 3)
-  let at = t + 0.12
-  for (const d of notes) {
-    syn.bell(o, hz(d), at, { kind: 'glass', level: 0.8, pan: Math.random() * 0.6 - 0.3 })
-    at += 0.22 + Math.random() * 0.45
-  }
+  // a touch slower than it came: its swell lasts the fall
+  if (!rec.shot(o, 'air', t, { rate: 0.85 })) syn.swish(o, t, { dur: 2.2, from: 420, to: 2600, q: 0.7, level: 0.07, pan: -0.2, panTo: 0.25 })
 }
 
 // ---- the world ------------------------------------------------------------------------------------------
