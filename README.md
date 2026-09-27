@@ -1,51 +1,37 @@
 # ZEN Design Team
 
-A thank-you postcard for the ZEN.COM design team: fourteen Zeneks, the ZEN mascot, one
-per designer, chatting on a terrace in a hand-drawn ZenDS world. Real-time 3D in the
-browser, built from code.
+![Fourteen Zeneks chatting in the ZEN room on a wooden terrace, a hand-drawn landscape around it](.github/preview.jpg)
 
-**Live:** https://artskw.github.io/zen-design-team/ (a work in progress)
+A thank-you postcard for the ZEN.COM design team: fourteen Zeneks, the ZEN.COM mascot,
+one for each designer, chatting in a hand-drawn ZenDS world. Tap anyone to hear what
+they have to say.
 
-## Run it
+**Live:** https://artskw.github.io/zen-design-team/
+
+## Highlights
+
+- Fourteen characters, each designed in 2D first and rebuilt in 3D to match.
+- A real-time 3D room inside a world drawn in the ZenDS illustration style.
+- Characters that hold conversations: turns, gestures, nods, glances.
+- A title written by one pen that moves like a hand, then falls away as petals.
+
+## Under the hood
+
+React Three Fiber (three.js), React, TypeScript and Vite. No 3D models: everything is code.
+
+- Hair and beards are signed distance fields, baked offline to meshes; the fabrics are shaders.
+- The drawn world is canvas-drawn ink on three rings at different depths, so orbiting gives parallax.
+- The title's pen follows handwriting kinematics: one impulse per stroke, slower in curves.
+
+```
+src/zenek/   the mascot: body, sculpts, fabric shaders, gestures, conversation
+src/set/     the 3D room and the drawn world around it
+src/cast/    who sits where, and what they say
+src/ui/      loader, handwritten title, petals, speech bubbles
+scripts/     offline bakes and visual checks
+```
 
 ```sh
 npm install
-npm run dev        # http://127.0.0.1:5173
-npm run build      # typecheck + production build into dist/
-npm run shot       # Playwright screenshots of the stage into shots/
+npm run dev
 ```
-
-Stack: Vite, React, TypeScript, three.js with React Three Fiber and drei.
-
-## Tuning from the URL
-
-Every tunable has a default; the query string only overrides it.
-
-| Param | Does |
-|---|---|
-| `intro=0` | skip the loader and entrance, land settled |
-| `motion=0` | freeze idle motion (deterministic screenshots) |
-| `lab=<id>` | one Zenek on a neutral backdrop, e.g. `lab=janek` |
-| `title=0` · `title=hold` | skip the title card · stay on it |
-| `sheet=1` | the drawn world as a flat layer sheet |
-| `az=` `el=` `dist=` | override the home camera (degrees, units) |
-
-The full list lives in [src/lib/params.ts](src/lib/params.ts).
-
-## Where things are
-
-- [BRIEF.md](BRIEF.md): what this is and why (the product brief, with dated decisions)
-- [docs/plan.md](docs/plan.md): the execution spec and the log of each build round
-- `src/set/`: the diorama and the drawn world · `src/zenek/`: the mascot, sculpts, motion ·
-  `src/cast/team.ts`: who sits where · `scripts/`: offline bakes and review tools
-
-Reference images (the 2D character designs, ZenDS exports, concept renders) stay
-outside the repo, so the scripts that read `docs/**/*.png|svg` work only on the
-author's machine. Their outputs are committed (`src/set/ds-paths.ts`,
-`src/ui/title-glyphs.ts`, `public/sculpts/*.bin`).
-
-## Deploy
-
-Every push to `main` builds and publishes to GitHub Pages
-([.github/workflows/deploy.yml](.github/workflows/deploy.yml)). The build is served
-from `/zen-design-team/` (`base` in [vite.config.ts](vite.config.ts)).
