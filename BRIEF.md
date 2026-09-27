@@ -67,10 +67,14 @@ machine and are never committed; only the derived Zenek character sheets are.
 1. **Arrival.** The design-system loader mark pops in and spins with an eased,
    playful cadence for under a second; its ring closes and the check writes in. Then the
    title card: **"Meet ZEN Design Team"** — Artur's own typesetting in Nunito, black on
-   the paper — is *written by hand*: a pen travels each letter's strokes in a human order
-   (the i gets its dot when the word is done) and ink appears only where it has passed;
-   it holds for a breath and dissolves as the room fades in, rises into place and the
-   camera settles
+   the paper — is *written by hand*: one pen, one point of ink at a time, travelling each
+   letter's strokes in a human order with a writer's rhythm (quick attack, slower
+   settle, slowing into curves, all but stopping at corners, lifting between strokes);
+   "Meet" at a pace the eye can follow, then the hand speeds up, with a beat before
+   "ZEN". Ink appears only where the pen has passed and swells to the letter's weight
+   just behind the nib; the i's dot is tapped in last, landing with a small squash. As
+   soon as it is written it lets go into falling petals, the room fades in, rises into
+   place and the camera settles
    from a pulled-back angle. The Zeneks arrive in a quick staggered wave, back
    rows first. About three seconds from first paint to a settled scene.
 2. **The room.** Fourteen Zeneks on the concrete floor of the wood room, arranged

@@ -7,13 +7,13 @@
 import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three'
 import { DS, type DsMotif } from './ds-paths'
 
-export const PAPER = '#f8f7f4' // almost white, a breath warm; the DS draws on #f5f5f5
+export const PAPER = '#fdfdfc' // a whisper off white, a breath warm (the CSS page's --page); the DS draws on #f5f5f5
 export const INK = '#222222'
 export const WATER = '#d3dbd8' // pale mineral; lights are neutral so it stays cool
 /** DS 'white' fills sit a hair lighter than the page, as #fff does on #f5f5f5. */
 export const PAPER_LIGHT = '#ffffff'
 const INK_RGB = [34, 34, 34] as const
-const PAPER_RGB = [248, 247, 244] as const
+const PAPER_RGB = [1, 3, 5].map((i) => parseInt(PAPER.slice(i, i + 2), 16))
 
 /** Ink strength: 1 = the DS #222; lower values sink toward the paper (depth fade). */
 export function tone(t: number, alpha = 1) {

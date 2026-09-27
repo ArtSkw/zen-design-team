@@ -107,11 +107,11 @@
 > on small planes facing the room. Ink fades with depth (tone 1 / 0.7 / 0.42); stroke
 > width and hatch pitch are computed per ring so they stay ≈ 2 px / 6 px on screen from
 > the home camera. `src/set/Illustrated.tsx` renders it unlit, unfogged and untoned on a
-> paper sky with a whisper of grain; the water is a disc ending just inside the near
+> flat paper sky (Round 36: no grain — the DS sky is the untouched page); the water is a disc ending just inside the near
 > strip (`MeshReflectorMaterial`, pale mineral `#ccd5d0`, mirror 0.4, `depthScale 0` so
 > reflected hills do not read lighter than reflected sky); stroke ripples sit at every
 > piling; two birds cross the home arc every 24–58 s (one holds still under reduced
-> motion). Sky, fog and the CSS page share one paper (`#f3f0ea`). Lanterns: point light
+> motion). Sky, fog and the CSS page share one paper (`PAPER` in ink.ts = CSS `--page`, `#fdfdfc` since Round 37). Lanterns: point light
 > 0.7 / distance 5 plus a baked warm pool. `?sheet=1` renders the layer set flat, as the
 > camera sees it (whole arc + the home arc at 3×); `?bridge=1` adds the DS bridge;
 > `?az=&el=&dist=` override the home view for shots. The visible arc is φ 50°–370°
@@ -597,6 +597,77 @@
 > identical copies across the new characters' files (every sculpt field sampled before and after:
 > bit-identical, so no re-bake; Karol's close-up renders pixel-identical); the dead `?grid`,
 > `?shadow`, `?progress` flags removed.
+>
+> **Round 36 (2026-09-27) — a hand that writes, and the page as the sky.** Artur: the title
+> "smoothly reveals" — make it a real, playful, artistic hand-writing; the sky's delicate
+> texture looks stretched in places — intended? can it match the DS illustrations?
+> *Title* (`src/ui/TitleCard.tsx`, the petals untouched): the old pen wrote the line in 1.55 s,
+> a letter every 3–4 frames, with the next letter starting before the last one landed and a
+> blurred wet edge ahead — too fast to follow a stroke, several heads at once: a wipe. Now one
+> pen writes one point of ink at a time. Kinematics after handwriting research: each stroke
+> between corners is one impulse (skewed bump: quick attack, long settle — the
+> sigma-lognormal shape), isochrony (duration ∝ length^0.4), speed ∝ radius^⅓ in tight curves
+> (the two-thirds power law), 10 % of peak at a corner, touch-down at 30 %, lift-off at 45 %;
+> the pen lifts through the air (14 + 2.6·√d ms). Tempo per word 44 / 34 / 29 / 27 ms per
+> 40-unit stroke: "Meet" legible, then faster; beats 70 ms before "ZEN", 50 before "Design";
+> the trip to the i's dot is the pause before "Team". Ink: a round nib 0.94 × the letter's
+> half-stroke (`HALF` in title-pen.ts, stems 5.45 / 7.3 units), up to 30 % slimmer at speed
+> and pressing in from 62 % over the first 4.5 units at touch-down, spreading to the half-stroke
+> + 0.3 within 9 units / 60 ms behind the nib (spreading to the old covering nib spilled into
+> the neighbouring stem at joins — spikes on N and g); a fast head is smeared over 7 ms of
+> travel (fading to 55 %) and clears 40 ms after lift-off; what the paths miss (≤ 2 px² a
+> letter, `title-pen-check.mjs` now measures at the ink's real width) seeps in over 80 ms, and
+> the letter is the type. The D's bowl path was made fuller (Nunito's bowl is squarer than a
+> circle). The i's dot drops 5 units, squashes 28 % on landing and springs back round (380 ms).
+> Written at 2.33 s (was 1.55). Rendering: a canvas beside the line, mapped from the SVG's
+> screen rect exactly as TitleDust maps it, at its resolution (dpr ≤ 2), on whole CSS pixels
+> (Chrome snaps a canvas's box to them: a device-pixel box drew 1 px low) and on a CPU context
+> like TitleDust's ink (GPU and CPU anti-aliasing differ at edges) — the pen's last frame and
+> the petals' first are identical (max difference 0–1 at 1×, 2×, 3×); the canvas holds the
+> title until `dissolve` and the SVG is only shown under reduced motion. `drawAt` ≤ 0.3 ms a
+> frame on desktop, ≤ 1.6 ms at CPU×6. *Sky:* the grain was a hash of view directions
+> (`d.xy·1400 + d.z·700`) — a planar projection on a sphere, so cells smeared into diagonal
+> streaks wherever the view ran along x, at about one cell per pixel (moiré), growing with
+> zoom. Every ZenDS illustration (node 3168:12543) draws on a flat, untouched page (#F5F5F5,
+> fills #FFF) — its sky is what floats in it: hatched clouds, the sun ring, a plane, gulls.
+> `PaperSky` is now flat `PAPER`, identical to the CSS page the title is written on and to the
+> hills' paper. Offered, not built: a paper tooth done right (screen-locked, isotropic, over the
+> whole drawn page and the title page alike, never the 3D room).
+>
+> **Round 37 (2026-09-27) — whiter paper, a quicker hand.** Artur: the sky a little brighter,
+> super close to #fff; the write-on a bit faster, keeping its playful style. The whole page
+> moved, not only the sky — hills, fog, the depth fade of far ink and the title page share it,
+> and a white sky over #f8f7f4 hills would have greyed them: `PAPER` `#f8f7f4` → `#fdfdfc`
+> (the CSS page reads it as `--page`; `PAPER_RGB` is now derived from `PAPER`; theme-color to
+> match). DS white fills stay `#fff`. The hand: tempo 44/34/29/27 → 37/28/24/22 ms per
+> 40-unit stroke, air 14 + 2.6·√d → 11 + 2.2·√d ms, beats 70/50/20 → 60/40/15 ms, ink settle
+> 60 → 50 ms and seep 80 → 60 ms, the dot's dwell 25 → 20 ms; the dot's drop and squash keep
+> their full timing (the playful beat). Written at 1.96 s (was 2.33; the reveal before Round 36
+> took 1.55); "Meet" still the slowest word. Handoff to the petals still pixel-identical
+> (`title-handoff.mjs`: max 0–1 at 1×/2×/3×).
+>
+> **Round 38 (2026-09-27) — explorations, tried and removed; a flicker found and fixed.**
+> Three write-on variants were built behind `?pen=` (settle: letters written askew that click
+> into the typesetting; splash: droplets as the i's dot lands; trace: the pen's journeys as
+> dotted arches). Artur saw letters "abruptly flicker / change their appearance once fully
+> drawn" and dropped them all. The settle's click (one overshoot in ~100 ms) read as a glitch —
+> but a frame-by-frame scan (every 60 fps frame, counting ink that gets lighter) showed the
+> approved title had a real one too: at the moment a letter was done, its edges lightened (D at
+> 1100 ms, T, a — letters of two strokes most). Cause: each stroke was clipped to the outline
+> and drawn over the seeping type, so every soft edge pixel was anti-aliased two or three times
+> (1 − (1 − c)²: a touch bolder while settling), then the finished type's single coverage `c`
+> replaced it in one frame. Fix: a letter in progress is laid on a layer (the seep as a rect at
+> its alpha, the strokes unclipped) and cut to the letter's outline once (`destination-in`),
+> then copied in — edges now carry the type's own coverage throughout; the i's dot stays out
+> of the cut (it squashes). Scan after: no ink lost anywhere but the dot's own squash, even at a
+> 20-level threshold. Draw cost 0.6 ms a frame (≤ 3.7 ms at CPU×6).
+>
+> **Round 39 (2026-09-27) — quicker, and straight into the petals.** Tempo 37/28/24/22 →
+> 32/24/21/19, air 11 + 2.2·√d → 10 + 2·√d ms, beats 60/40/15 → 50/35/10, ink settle 50 → 40
+> and seep 60 → 40 ms, the dot's settle 380 → 300 ms (its spring is within 0.7 % by then).
+> Written at 1.71 s (was 1.96). The still moment between the last stroke landing and the petals
+> letting go: ~245 → ~110 ms (`DUST_REST` 120 → 30 ms in TitleDust; the petals themselves
+> untouched). Handoff still pixel-identical.
 >
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
 > designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; all 14 built;

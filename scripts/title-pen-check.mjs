@@ -1,5 +1,7 @@
 // Check the title card's pen: (1) coverage — every letter rendered in full vs through
-// its fully drawn pen mask; any ink the pen never reaches is counted and painted red;
+// its fully drawn pen paths at the width the ink spreads to (HALF + BODY); any ink the
+// pen never reaches is counted and painted red (it seeps in once the letter is
+// written — keep it to a few px);
 // (2) a sheet of the pen paths over the letters (start = green dot, order numbered).
 //   node scripts/title-pen-check.mjs  →  shots/title-pen-coverage.png, shots/title-pen-paths.png
 import { createServer } from 'vite'
@@ -7,7 +9,8 @@ import sharp from 'sharp'
 
 const server = await createServer({ configFile: 'vite.config.ts', logLevel: 'silent', server: { middlewareMode: true } })
 const { GLYPHS } = await server.ssrLoadModule('/src/ui/title-glyphs.ts')
-const { PEN, NIB } = await server.ssrLoadModule('/src/ui/title-pen.ts')
+const { PEN, HALF } = await server.ssrLoadModule('/src/ui/title-pen.ts')
+const { BODY } = await server.ssrLoadModule('/src/ui/TitleCard.tsx')
 await server.close()
 
 const S = 6 // render scale
@@ -15,7 +18,7 @@ const VB = { x: 0, y: -2, w: 627, h: 58 }
 const svg = (body) => `<svg xmlns="http://www.w3.org/2000/svg" width="${VB.w * S}" height="${VB.h * S}" viewBox="${VB.x} ${VB.y} ${VB.w} ${VB.h}"><rect x="${VB.x}" y="${VB.y}" width="${VB.w}" height="${VB.h}" fill="#fff"/>${body}</svg>`
 const full = svg(GLYPHS.map((g) => `<path d="${g.d}" fill="#000"/>`).join(''))
 const masked = svg(
-  `<defs>${PEN.map((p, k) => `<mask id="m${k}" maskUnits="userSpaceOnUse" x="-20" y="-20" width="700" height="100">${[...p.strokes, ...(p.later ?? [])].map((d) => `<path d="${d}" fill="none" stroke="#fff" stroke-width="${NIB[p.weight]}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</mask>`).join('')}</defs>` +
+  `<defs>${PEN.map((p, k) => `<mask id="m${k}" maskUnits="userSpaceOnUse" x="-20" y="-20" width="700" height="100">${[...p.strokes, ...(p.later ?? [])].map((d) => `<path d="${d}" fill="none" stroke="#fff" stroke-width="${2 * (HALF[p.weight] + BODY)}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</mask>`).join('')}</defs>` +
     GLYPHS.map((g, k) => `<path d="${g.d}" fill="#000" mask="url(#m${k})"/>`).join(''),
 )
 const A = await sharp(Buffer.from(full)).greyscale().raw().toBuffer({ resolveWithObject: true })

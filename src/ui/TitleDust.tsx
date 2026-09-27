@@ -17,8 +17,8 @@ import { GLYPHS } from './title-glyphs'
 // they drift down over the room as it is revealed, and are gone soon after.
 
 const VIEW = { x: 0, y: -2, w: 627, h: 58 } // the title card's viewBox (TitleCard.tsx)
-/** ms the finished title rests before it lets go (App) — it goes as soon as it is written. */
-export const DUST_REST = 120
+/** ms the finished title rests before it lets go (App) — it goes as soon as it is written: a breath, no pause. */
+export const DUST_REST = 30
 /** ms from the title letting go to the curtain lifting (App). */
 export const DUST_LEAD = 1300
 

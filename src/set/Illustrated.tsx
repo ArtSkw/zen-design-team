@@ -28,28 +28,22 @@ export function polar(phi: number, r: number, y: number): [number, number, numbe
 export const facing = (phi: number) => (phi + 180) * D2R
 
 // ---- paper sky ------------------------------------------------------------------
+// The sky is the page itself, as in every ZenDS illustration: flat paper, nothing
+// painted on it — what lives in it (clouds, the sun, a plane, gulls) is drawn. It is
+// the exact colour of the CSS page under the title card, so the room rises out of
+// the same sheet the title was written on. (It used to carry a grain hashed in view
+// directions; on the sphere that smeared into diagonal streaks and moiré.)
 const srgb = (hex: string) => new Vector3(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255)
 const paperMat = new ShaderMaterial({
   side: BackSide,
   depthWrite: false,
   uniforms: { paper: { value: srgb(PAPER) } },
   vertexShader: `
-    varying vec3 vDir;
-    void main() {
-      vDir = normalize((modelMatrix * vec4(position, 1.0)).xyz);
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }`,
-  // flat paper with a whisper of grain; written in sRGB directly (no tone mapping)
+    void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  // written in sRGB directly (no tone mapping, no colour-space conversion)
   fragmentShader: `
     uniform vec3 paper;
-    varying vec3 vDir;
-    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-    void main() {
-      vec3 d = normalize(vDir);
-      float g = hash(floor(d.xy * 1400.0 + d.z * 700.0)) - 0.5;
-      float lift = smoothstep(-0.1, 0.8, d.y) * 0.012;
-      gl_FragColor = vec4(paper * (1.0 + g * 0.03 + lift), 1.0);
-    }`,
+    void main() { gl_FragColor = vec4(paper, 1.0); }`,
 })
 
 export function PaperSky() {

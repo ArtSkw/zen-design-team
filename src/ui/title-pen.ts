@@ -6,12 +6,15 @@
 // is exactly Artur's type.
 //
 // `strokes` are written in order, the pen lifting briefly between them; `later`
-// strokes wait until the word is written (the dot on the i). `weight` picks the nib:
-// wide enough to cover the letter's thickest stroke with a little to spare.
+// strokes wait until the word is written (the dot on the i). `weight` picks the
+// letter's stroke: the ink reaches HALF (+ a hair, TitleCard BODY) from the path, so
+// the paths run down the middle of every stroke — scripts/title-pen-check.mjs shows
+// what they miss (it seeps in once the letter is written).
 
 export type PenLetter = { ch: string; weight: 'regular' | 'bold'; strokes: string[]; later?: string[] }
 
-export const NIB = { regular: 8.2, bold: 10.5 }
+/** Half the letter's stroke: Nunito's stems are 5.45 and 7.3 units here. */
+export const HALF = { regular: 2.72, bold: 3.65 }
 
 // the lowercase e, as a shape to move: regular (Meet) and bold (Design, Team)
 const eRegular = (dx: number) =>
@@ -50,7 +53,7 @@ export const PEN: PenLetter[] = [
   {
     ch: 'D',
     weight: 'bold',
-    strokes: ['M286.0 5.18 L286.0 39.93', 'M286.0 5.18 L297.2 5.18 C307.06 5.18 315.05 12.95 315.05 22.53 C315.05 32.14 307.06 39.93 297.2 39.93 L286.0 39.93'],
+    strokes: ['M286.0 5.18 L286.0 39.93', 'M286.0 5.18 L297.2 5.18 C308.54 5.18 315.05 11.51 315.05 22.53 C315.05 33.58 308.54 39.93 297.2 39.93 L286.0 39.93'],
   },
   { ch: 'e', weight: 'bold', strokes: [eBold(0)] },
   {

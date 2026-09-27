@@ -1,5 +1,6 @@
 :root {
   --paper: #ffffff;
+  --page: #fdfdfc; /* the drawn page: sky, hills, title card — ink.ts PAPER */
   --ink: #111214;
   --ink-soft: #7a756e;
   --green: #22e243;
@@ -17,7 +18,7 @@ html {
   overscroll-behavior: none;
 }
 body {
-  background: #f8f7f4;
+  background: var(--page);
   color: var(--ink);
   font-family: var(--font);
   overflow: hidden;
@@ -30,7 +31,7 @@ body {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: #f8f7f4;
+  background: var(--page);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -190,7 +191,7 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
   z-index: 10;
   display: grid;
   place-items: center;
-  background: #f8f7f4;
+  background: var(--page);
   transition: opacity 900ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .loader--out { opacity: 0; pointer-events: none; }
@@ -216,18 +217,18 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
   pointer-events: none;
   transition: opacity 650ms var(--ease-out), filter 650ms var(--ease-out), transform 900ms var(--ease-out);
 }
-.tc-svg {
-  display: block;
+.tc-line {
   width: clamp(min(300px, 86vw), 44vw, 700px); /* Artur's type, one line, at every size */
-  height: auto;
-  overflow: visible;
   animation: tc-settle 2600ms var(--ease-out) both; /* the whole line breathes in, barely */
 }
+.tc-svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* the pen writes here, on a canvas around the line (TitleCard places it) */
+.tc-pen { position: fixed; left: 0; top: 0; pointer-events: none; }
 .tc-ink { fill: var(--ink); }
 .title-card--out { opacity: 0; filter: blur(6px); transform: scale(1.02); }
 /* the title letting go into petals (TitleDust): above the curtain, so they fall on over the rising room */
 .title-dust { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
-.title-card--calm .tc-svg { animation: tc-fade 600ms ease-out both; }
+.title-card--calm .tc-line { animation: tc-fade 600ms ease-out both; }
 @keyframes tc-settle { from { transform: scale(0.985); } to { transform: scale(1); } }
 @keyframes tc-fade { from { opacity: 0; } }
 .dsl__spin { transform-origin: 30px 30px; will-change: transform; } /* the ring's centre */
