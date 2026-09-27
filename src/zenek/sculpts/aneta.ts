@@ -1,4 +1,5 @@
 import { Field, polygon2, smax, smin, type V3 } from '../sculpt'
+import { keyed, smooth } from '../../lib/anim'
 import { pitchOf, yawOf } from './scalp'
 import type { SculptSpec } from './types'
 
@@ -14,27 +15,6 @@ import type { SculptSpec } from './types'
 const D = Math.PI / 180
 const clamp1 = (v: number) => Math.max(-1, Math.min(1, v))
 
-/** Smooth interpolation through [x, y] keys (cubic Hermite, finite-difference tangents). */
-function keyed(keys: [number, number][]) {
-  const k = [...keys].sort((a, b) => a[0] - b[0])
-  const slope = (i: number) => {
-    const a = k[Math.max(0, i - 1)]
-    const b = k[Math.min(k.length - 1, i + 1)]
-    return (b[1] - a[1]) / (b[0] - a[0])
-  }
-  return (x: number) => {
-    if (x <= k[0][0]) return k[0][1]
-    for (let i = 1; i < k.length; i++)
-      if (x <= k[i][0]) {
-        const h = k[i][0] - k[i - 1][0]
-        const t = (x - k[i - 1][0]) / h
-        const t2 = t * t
-        const t3 = t2 * t
-        return (2 * t3 - 3 * t2 + 1) * k[i - 1][1] + (t3 - 2 * t2 + t) * h * slope(i - 1) + (-2 * t3 + 3 * t2) * k[i][1] + (t3 - t2) * h * slope(i)
-      }
-    return k[k.length - 1][1]
-  }
-}
 
 // ---- the shirt ----------------------------------------------------------------------------
 // The collar's roll line and outer edge, by |yaw| (degrees; pitch in degrees): the points
@@ -96,7 +76,7 @@ function shirtSdf(x: number, y: number, z: number) {
   const dTop = (ROLL(ay) - 0.6 - pitch) * D
   const dHem = (pitch - hem(yaw)) * D
   const dOpen = uz > 0 ? polygon2(ux, uy, OPEN) : 1
-  const placket = dOpen > 0 && dOpen < 0.08 && pitch < -3 ? 0.007 * (1 - smoothstep(0.052, 0.07, dOpen)) : 0
+  const placket = dOpen > 0 && dOpen < 0.08 && pitch < -3 ? 0.007 * (1 - smooth(0.052, 0.07, dOpen)) : 0
   const outer = 1.036 + folds(yaw, pitch) + placket
   const layer = Math.max(r - outer, 0.992 - r)
   const d = smax(layer, -Math.min(dTop, dHem, dOpen), 0.012)
@@ -132,10 +112,6 @@ function collarSdf(x: number, y: number, z: number) {
   // the stand: a band from the shirt's neck up under the fold
   if (ay > 17.5) d = smin(d, smax(Math.max(r - 1.08, 1.0 - r), (Math.abs(toRoll - 1.2) - 2.2) * D, 0.006), 0.01)
   return d
-}
-const smoothstep = (a: number, b: number, v: number) => {
-  const t = Math.max(0, Math.min(1, (v - a) / (b - a)))
-  return t * t * (3 - 2 * t)
 }
 
 export const anetaInner: SculptSpec = {
@@ -196,7 +172,7 @@ function inHair(yaw: number, p: number) {
   return Math.abs(yaw) < 70 ? Math.min(cut, polygon2(yaw * Math.cos(p * D), p, U)) : cut
 }
 /** The layer's radius where it is full: 0.085 R over the sides rising to 0.13 R on the crown. */
-const full = (p: number) => 1.085 + 0.045 * smoothstep(15, 90, p)
+const full = (p: number) => 1.085 + 0.045 * smooth(15, 90, p)
 /**
  * The layer's outer radius: rounding over from its edge to full within 7° (a quarter-round,
  * as hair curls in at its edge — a ramp read as a bevelled hood), with a soft ripple of locks
@@ -205,7 +181,7 @@ const full = (p: number) => 1.085 + 0.045 * smoothstep(15, 90, p)
 const outerAt = (yaw: number, p: number) => {
   const e = Math.min(1, Math.max(0, inHair(yaw, p) / 7))
   const round = Math.sqrt(1 - (1 - e) * (1 - e))
-  const locks = 0.006 * Math.sin(yaw * D * 16 + 0.6 * Math.sin(yaw * D * 5)) * smoothstep(75, 45, p) * e
+  const locks = 0.006 * Math.sin(yaw * D * 16 + 0.6 * Math.sin(yaw * D * 5)) * smooth(75, 45, p) * e
   return 1.015 + (full(p) - 1.015) * round + locks
 }
 /** The layer: from just inside the head out to outerAt, where there is hair, its edge rounded. */

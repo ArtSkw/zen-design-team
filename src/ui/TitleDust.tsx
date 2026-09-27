@@ -394,18 +394,19 @@ export function TitleDust() {
     drawAt(d, ctx, 0)
     svg.style.visibility = 'hidden' // same frame: the canvas now holds the title
 
-    // design check (?dust=hold): window.__dust.seek(ms) freezes the dust at a moment
+    // design check (?dust=hold; dev only): window.__dust.seek(ms) freezes the dust at a moment
     let frozen = DEBUG.dust === 'hold'
-    ;(window as unknown as { __dust?: object }).__dust = {
-      seek: (ms: number) => {
-        frozen = true
-        drawAt(d, ctx, ms)
-      },
-      duration: d.end,
-      rect: d.rect,
-      count: { petals: d.petals.length, specks: d.specks.length, pixels: d.idx.length, buildMs: Math.round(buildMs) },
-    }
-    ;(window as unknown as { __dust: { start: number } }).__dust.start = performance.timeOrigin + performance.now() // wall clock, ms
+    if (import.meta.env.DEV)
+      (window as unknown as { __dust?: object }).__dust = {
+        seek: (ms: number) => {
+          frozen = true
+          drawAt(d, ctx, ms)
+        },
+        duration: d.end,
+        rect: d.rect,
+        count: { petals: d.petals.length, specks: d.specks.length, pixels: d.idx.length, buildMs: Math.round(buildMs) },
+        start: performance.timeOrigin + performance.now(), // wall clock, ms
+      }
     if (frozen) setTimeout(() => store.set({ lift: true }), DUST_LEAD) // a frozen check still lets the room come
     let t = 0
     let last = -1
@@ -415,7 +416,7 @@ export function TitleDust() {
         last = now
         if (t >= DUST_LEAD && !store.get().lift) store.set({ lift: true }) // the petals are falling: the curtain may lift
         if (t > d.end) {
-          delete (window as unknown as { __dust?: object }).__dust // let the buffers go
+          if (import.meta.env.DEV) delete (window as unknown as { __dust?: object }).__dust // let the buffers go
           return setDone(true)
         }
         drawAt(d, ctx, t)

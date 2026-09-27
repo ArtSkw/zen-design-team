@@ -240,15 +240,16 @@ function Written({ out }: { out: boolean }) {
       store.set({ written: true })
       return
     }
-    // design check: window.__title.seek(ms) freezes the card at a moment
+    // design check (dev only): window.__title.seek(ms) freezes the card at a moment
     let frozen = false
-    ;(window as unknown as { __title?: object }).__title = {
-      seek: (ms: number) => {
-        frozen = true
-        draw(ms)
-      },
-      duration: TITLE_MS,
-    }
+    if (import.meta.env.DEV)
+      (window as unknown as { __title?: object }).__title = {
+        seek: (ms: number) => {
+          frozen = true
+          draw(ms)
+        },
+        duration: TITLE_MS,
+      }
     // The pen keeps its own clock, from the first frame it is seen in, and a frame moves it
     // by STEP at most: when the device stalls (a phone busy with the 3D, a slow first paint
     // of the masks) the pen waits, rather than jumping ahead to a title already written.

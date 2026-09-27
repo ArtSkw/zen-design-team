@@ -7,6 +7,7 @@ import { TEAM, byId } from '../cast/team'
 import { HAND_L, HAND_R, type ZenekRefs } from './Zenek'
 import { ZR } from './proportions'
 import { headTraits } from './parts'
+import { crystalGlow } from './edyta-layout'
 import { DURATION, allowed, gesture, offsets, resetOffsets, type GestureKind } from './gestures'
 import { circleMates, emit, eventsSince, laughOf, roleOf, tickSocial } from './social'
 import { skyAttention } from '../lib/sky'
@@ -163,7 +164,7 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
     const start = (kind: GestureKind, dur = DURATION[kind], idle = false) => {
       const side: 1 | -1 = kind === 'wave' && cfg.traits.waveSide ? cfg.traits.waveSide : cfg.rng() < 0.5 ? -1 : 1 // a lock framing one side of the face keeps that hand down
       s.gest = { kind, t0: t, dur: dur * (rm ? 1.15 : 1), side, idle }
-      if (kind === 'wave' || kind === 'stretch' || kind === 'laugh') emit({ id: member.id, kind, x: _v.x, y: _v.y, z: _v.z, t })
+      if (kind === 'wave' || kind === 'stretch' || kind === 'laugh' || kind === 'gaze') emit({ id: member.id, kind, x: _v.x, y: _v.y, z: _v.z, t })
     }
     const hovered = S.hover === member.id
     if (settled) {
@@ -208,6 +209,7 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
           ['stretch', listening ? 0 : 1],
           ['tilt', listening ? 1 : cfg.host || s.att > 0.5 ? 1.4 : 0.4],
           ['wave', listening ? 0 : cfg.host ? 0.6 : 0.12],
+          ['gaze', listening ? 0 : 1.3], // the crystal ball, now and then (only a Zenek holding one: `allowed`)
         ]
         let sum = 0
         for (const [k, w] of pool) if (allowed(k, cfg.traits)) sum += w
@@ -238,10 +240,11 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
       // design check: every Zenek holds one gesture at one moment
       resetOffsets(off)
       const k = DEBUG.gest as GestureKind
-      gesture(k, clamp(DEBUG.gestU, 0, 0.999), member.seed % 2 ? 1 : -1, off, DURATION[k], cfg.traits)
+      gesture(k, clamp(DEBUG.gestU, 0, 0.999), DEBUG.gestSide ? (DEBUG.gestSide > 0 ? 1 : -1) : member.seed % 2 ? 1 : -1, off, DURATION[k], cfg.traits)
       ga = 1
     }
     root.scale.y *= 1 + ga * off.sy
+    if (cfg.traits.holds) crystalGlow.value = ga * off.glow
     root.position.y = member.seat.y + R * root.scale.y + hop + s.hover * 0.06 * R
     const handL = refs.handL.current
     const handR = refs.handR.current
@@ -425,9 +428,12 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
     const leanTo = amp * (role.kind === 'listen' ? 0.05 : role.kind === 'speak' || speaking ? 0.025 : 0)
     s.lean = damp(s.lean, leanTo, 1.3, dt)
     head.rotation.set(-s.pitch + ga * off.pitch + s.lean, s.yaw + ga * off.yaw, ga * off.roll)
-    // the hands follow the body's turn, a beat behind
+    // the hands follow the body's turn, a beat behind — or, beside long hair, turn and tilt with it
     s.handYaw = damp(s.handYaw, s.yaw * 0.85 + ga * off.yaw * 0.4, 3, dt)
-    if (refs.hands.current) refs.hands.current.rotation.y = s.handYaw
+    if (refs.hands.current) {
+      if (cfg.traits.rigidPaws) refs.hands.current.rotation.copy(head.rotation)
+      else refs.hands.current.rotation.y = s.handYaw
+    }
 
     // eyes: they reach a new target first and the body follows; between moves they
     // make small saccades of their own

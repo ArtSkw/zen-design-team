@@ -1,5 +1,5 @@
 // Look at your own frames. Starts a dev server, screenshots the stage.
-//   npm run shot -- --label p1 --q "grid=1&intro=0&motion=0" [--vp 1600x900,1280x720,390x844]
+//   npm run shot -- --label p1 --q "intro=0&motion=0" [--vp 1600x900,1280x720,390x844]
 //                   [--series 300,900,1500,2400] [--dsf 1] [--wait 600] [--clip]
 import { chromium } from 'playwright'
 import { createServer } from 'vite'

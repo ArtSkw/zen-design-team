@@ -1,5 +1,6 @@
 import type { PartConfig } from '../zenek/parts'
 import type { FaceOverride } from '../zenek/proportions'
+import { EDYTA_FACE } from '../zenek/edyta-layout'
 
 /**
  * Jointed arms (the left one; the right is its mirror), in body-radius units: the upper
@@ -63,13 +64,26 @@ export const TEAM: Member[] = [
       { type: 'sculpt', name: 'artur-beard', color: '#c68653', clay: { freq: 120, amp: 0.18, sheenColor: '#ffd6b0' }, traits: { front: true } },
       { type: 'sculpt', name: 'artur-moustache', color: '#cd8e5b', clay: { freq: 140, amp: 0.2, sheenColor: '#ffd6b0' } },
     ],
-    face: { plate: { a: 0.6, b: 0.36, y: 0.26 }, eye: { dx: 0.17, y: 0.065 } },
+    // the plate a little longer and wider than drawn (0.6 × 0.36, +0.26), its top kept: the white
+    // reaches down under the moustache and the beard's top out to the sideburns (Artur, 2026-09-26)
+    face: { plate: { a: 0.65, b: 0.44, y: 0.182 }, eye: { dx: 0.17, y: 0.065 } },
     seat: at(15.6, 0, 2.4, -0.25),                           // arriving on the terrace, right edge
     gaze: 'viewer',                                            // the host greets whoever is looking
     temperament: { breath: 1.0, blink: 0.9, sway: 1.1 },
   },
   // ---- designs pending: plain Zeneks hold the seats ---------------------------
-  { id: 'magda-j', name: 'Magda J.', seed: 41, parts: [], seat: at(5.6, CUSHION, 6.2, 0.5), temperament: { breath: 1.1, blink: 1.0, sway: 1.0 } },
+  {
+    // docs/cast/magda-j.png — body circle (672, 653) px, R 421 (fitted on the silhouette below the hands)
+    id: 'magda-j', name: 'Magda J.', seed: 41,
+    parts: [
+      { type: 'sculpt', name: 'magda-j-hair', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35] }, traits: { crown: true } },
+      // one loose curl out of the hairline onto her forehead (the same clay)
+      { type: 'sculpt', name: 'magda-j-curl', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35] } },
+      { type: 'airpods' },
+    ],
+    face: { plate: { a: 0.683, b: 0.438, y: 0.307 }, eye: { dx: 0.173, y: 0.072, rx: 0.087, ry: 0.11 } },
+    seat: at(5.6, CUSHION, 6.2, 0.5), temperament: { breath: 1.1, blink: 1.0, sway: 1.0 },
+  },
   {
     // docs/cast/aneta.png — the drawn body is a touch tall: read on an ellipse centred (637, 720) px, 408 across, 435 up
     id: 'aneta', name: 'Aneta', seed: 43,
@@ -83,8 +97,33 @@ export const TEAM: Member[] = [
     face: { plate: { a: 0.675, b: 0.461, y: 0.528 }, eye: { dx: 0.18, y: 0.272, rx: 0.086, ry: 0.103 } },
     seat: at(7.6, CUSHION, 5.6, 0.3), temperament: { breath: 0.95, blink: 1.2, sway: 0.9 },
   },
-  { id: 'edyta', name: 'Edyta', seed: 47, parts: [], seat: at(1.55, BENCH, 4.4, 0.95), temperament: { breath: 1.05, blink: 0.9, sway: 1.1 } },
-  { id: 'karol', name: 'Karol', seed: 53, parts: [], seat: at(1.55, BENCH, 6.6, 1.05), temperament: { breath: 0.9, blink: 1.0, sway: 1.2 } },
+  {
+    // docs/cast/edyta.png — body circle (655, 650) px, R 390 (the design's face is turned a touch to the right; the build is square on)
+    // the storyteller: loose blond waves under a red kerchief with a gold celestial print, bangles on
+    // her right paw (the one that waves), a crystal ball on her left (the earrings came off: Artur, 2026-09-27)
+    id: 'edyta', name: 'Edyta', seed: 47,
+    parts: [
+      { type: 'sculpt', name: 'edyta-hair', color: '#5f4128', clay: { freq: 170, amp: 0.12, sheen: 0.65, sheenColor: '#f6e2bb', roughness: 0.5, tip: '#c39d66', tipY: [0.95, 0.5] }, traits: { crown: true, waveSide: -1, sideWave: true, rigidPaws: true } },
+      { type: 'kerchief', name: 'edyta-kerchief', color: '#6f1f28', gold: '#d8a64a' },
+      { type: 'bangles', hand: 'l' },
+      { type: 'crystal-ball', hand: 'r' },
+    ],
+    face: EDYTA_FACE,
+    seat: at(1.55, BENCH, 4.4, 0.95), temperament: { breath: 1.05, blink: 0.9, sway: 1.1 },
+  },
+  {
+    // docs/cast/karol.png — body circle (626, 692) px, R 380 (fitted on the silhouette below the hands)
+    id: 'karol', name: 'Karol', seed: 53,
+    parts: [
+      { type: 'beanie', color: '#67704b' },
+      // dark, greying toward the chin (a gradient to a neutral grey) with a silvery sheen on the locks
+      { type: 'sculpt', name: 'karol-beard', color: '#252526', clay: { freq: 210, amp: 0.14, sheen: 0.85, sheenColor: '#aeb0b3', roughness: 0.45, tip: '#3d3e41', tipY: [-0.28, -0.92] }, traits: { front: true } },
+    ],
+    // the plate a little longer than drawn (0.729 × 0.42, +0.263), its top kept: the white reaches
+    // down under the moustache to its tips (Artur, 2026-09-26)
+    face: { plate: { a: 0.74, b: 0.47, y: 0.214 }, eye: { dx: 0.186, y: 0.024, rx: 0.087, ry: 0.113 } },
+    seat: at(1.55, BENCH, 6.6, 1.05), temperament: { breath: 0.9, blink: 1.0, sway: 1.2 },
+  },
   {
     // docs/cast/kamil.png — body circle (627, 638) px, R 402
     id: 'kamil', name: 'Kamil', seed: 59,
@@ -113,18 +152,22 @@ export const TEAM: Member[] = [
     parts: [
       { type: 'sculpt', name: 'krystian-hair', color: '#302c2a', clay: { freq: 90, amp: 0.12, roughness: 0.58, sheen: 0.5, sheenColor: '#a0958e' }, traits: { crown: true } },
       {
+        // Artur, 2026-09-26: the first beads came closest; refined toward Janek's mini-lines — slim,
+        // flat, matte dashes pointing the way stubble grows, scattered (no rows) and thinning out at
+        // the edges instead of stopping at an outline
         type: 'stubble',
-        color: '#1e1c1b', // just off the body's black: relief more than colour, delicate
+        color: '#1e1c1b',
+        roughness: 0.85,
         regions: [
           // the beard band, round the mouth
-          { poly: [[-0.72, 0.03], [-0.72, -0.15], [-0.63, -0.36], [-0.48, -0.5], [-0.25, -0.57], [0, -0.6], [0.25, -0.57], [0.48, -0.5], [0.63, -0.36], [0.72, -0.15], [0.72, 0.03], [0.6, -0.02], [0.45, -0.12], [0.37, -0.2], [0.34, -0.36], [0.2, -0.46], [0, -0.49], [-0.2, -0.46], [-0.34, -0.36], [-0.37, -0.2], [-0.45, -0.12], [-0.6, -0.02]], spacing: 3.7, size: [0.016, 0.027, 0.011], fan: 0.5, jitter: 0.35, seed: 1 },
-          // moustache: denser, bigger
-          { poly: [[-0.33, -0.09], [0.33, -0.09], [0.36, -0.17], [0.2, -0.19], [0, -0.18], [-0.2, -0.19], [-0.36, -0.17]], spacing: 3.0, size: [0.019, 0.031, 0.013], fan: 0.9, jitter: 0.3, seed: 2 },
+          { poly: [[-0.72, 0.03], [-0.72, -0.15], [-0.63, -0.36], [-0.48, -0.5], [-0.25, -0.57], [0, -0.6], [0.25, -0.57], [0.48, -0.5], [0.63, -0.36], [0.72, -0.15], [0.72, 0.03], [0.6, -0.02], [0.45, -0.12], [0.37, -0.2], [0.34, -0.36], [0.2, -0.46], [0, -0.49], [-0.2, -0.46], [-0.34, -0.36], [-0.37, -0.2], [-0.45, -0.12], [-0.6, -0.02]], scatter: 'blue', spacing: 2.85, falloff: 5, size: [0.0095, 0.024, 0.005], fan: 0.5, seed: 1 },
+          // moustache: a little denser
+          { poly: [[-0.33, -0.09], [0.33, -0.09], [0.36, -0.17], [0.2, -0.19], [0, -0.18], [-0.2, -0.19], [-0.36, -0.17]], scatter: 'blue', spacing: 2.3, falloff: 2.5, size: [0.0105, 0.026, 0.0055], fan: 0.9, seed: 2 },
           // goatee
-          { poly: [[-0.085, -0.255], [0.085, -0.255], [0.05, -0.36], [0, -0.385], [-0.05, -0.36]], spacing: 3.2, size: [0.016, 0.031, 0.012], seed: 3 },
+          { poly: [[-0.085, -0.255], [0.085, -0.255], [0.05, -0.36], [0, -0.385], [-0.05, -0.36]], scatter: 'blue', spacing: 2.2, falloff: 2, size: [0.0095, 0.025, 0.005], seed: 3 },
           // the fade at the sides, below the hair
-          { poly: [[-88, 30], [-62, 34], [-60, 50], [-86, 54]], angles: true, spacing: 4.2, size: [0.01, 0.024, 0.006], flow: 20, seed: 4 },
-          { poly: [[62, 34], [88, 30], [86, 54], [60, 50]], angles: true, spacing: 4.2, size: [0.01, 0.024, 0.006], flow: -20, seed: 5 },
+          { poly: [[-88, 30], [-62, 34], [-60, 50], [-86, 54]], angles: true, scatter: 'blue', spacing: 4, falloff: 3, size: [0.008, 0.02, 0.004], flow: 20, seed: 4 },
+          { poly: [[62, 34], [88, 30], [86, 54], [60, 50]], angles: true, scatter: 'blue', spacing: 4, falloff: 3, size: [0.008, 0.02, 0.004], flow: -20, seed: 5 },
         ],
       },
       { type: 'sunglasses-rect', top: 0.415, bottom: -0.02, inner: 0.085, outer: 0.74, rim: 0.055, bend: 1.12 },
@@ -133,7 +176,19 @@ export const TEAM: Member[] = [
     face: { plate: { a: 0.74, b: 0.56, y: 0.15 }, eye: { dx: 0.232, y: 0.1 } },
     seat: at(3.0, 0, 2.6, 1.0), temperament: { breath: 1.0, blink: 0.95, sway: 1.15 },
   },
-  { id: 'mirek', name: 'Mirek', seed: 73, parts: [], seat: at(5.0, 0, 1.9, -0.3), temperament: { breath: 1.2, blink: 1.0, sway: 0.9 } },
+  {
+    // docs/cast/mirek.png — body circle (627, 630) px, R 384 (fitted on the head's sides and top; the drawn jacket hangs below the sphere)
+    id: 'mirek', name: 'Mirek', seed: 73,
+    parts: [
+      { type: 'sculpt', name: 'mirek-hair', color: '#43312a', clay: { freq: 70, amp: 0.035, roughness: 0.45, sheen: 0.6, sheenColor: '#a89084' }, traits: { crown: true } },
+      // the flight jacket: leather with pocket flaps, a shearling collar, brass zip and snaps, two patches (the sleeves left off: the hands stay bare)
+      { type: 'garment', name: 'mirek-jacket', look: 'leather', color: '#45302a' },
+      { type: 'garment', name: 'mirek-collar', look: 'fleece', color: '#b8773f' },
+      { type: 'jacket-trim' },
+    ],
+    face: { plate: { a: 0.702, b: 0.46, y: 0.363 }, eye: { dx: 0.178, y: 0.099, rx: 0.095, ry: 0.12 } },
+    seat: at(5.0, 0, 1.9, -0.3), temperament: { breath: 1.2, blink: 1.0, sway: 0.9 },
+  },
   {
     // docs/cast/mateusz-n.png — body circle (626, 624) px, R 419
     id: 'mateusz-n', name: 'Mateusz N.', seed: 79,
@@ -150,20 +205,11 @@ export const TEAM: Member[] = [
     // docs/cast/mateusz-k.png (the 2026-09-24 design) — body circle (700, 640) px, R 410 (fitted); frontal coordinates are fractions of R
     id: 'mateusz-k', name: 'Mateusz K.', seed: 83,
     parts: [
-      { type: 'sculpt', name: 'mateusz-k-hair', color: '#1f1814', clay: { freq: 110, amp: 0.12, roughness: 0.42, sheen: 0.4, sheenColor: '#a89080' }, traits: { crown: true } },
-      {
-        type: 'stubble',
-        color: '#0d0c0c',
-        regions: [
-          {
-            // a full, dense beard: up the sides beside the plate, a moustache under it, round the
-            // bare mouth area with a T-shaped soul patch rising into it
-            poly: [[-0.81, 0.1], [-0.78, -0.15], [-0.66, -0.37], [-0.44, -0.51], [-0.2, -0.573], [0, -0.585], [0.24, -0.56], [0.49, -0.46], [0.68, -0.29], [0.78, -0.1], [0.81, 0.1], [0.73, 0.024], [0.585, -0.073], [0.44, -0.12], [0.24, -0.078], [0, -0.085], [-0.24, -0.085], [-0.415, -0.12], [-0.54, -0.12], [-0.68, 0.0]],
-            holes: [[[-0.34, -0.18], [0.37, -0.18], [0.37, -0.29], [0.29, -0.37], [0.06, -0.378], [0.05, -0.3], [0.146, -0.27], [0.146, -0.256], [-0.146, -0.256], [-0.146, -0.27], [-0.05, -0.3], [-0.06, -0.378], [-0.27, -0.37], [-0.34, -0.29]]],
-            spacing: 1.35, size: [0.013, 0.02, 0.011], fan: 0.4, jitter: 0.55, seed: 21,
-          },
-        ],
-      },
+      // the hair in the beard's tone — Mateusz N's moustache and goatee colour (Artur, 2026-09-27: the near-black beard read too black)
+      { type: 'sculpt', name: 'mateusz-k-hair', color: '#2c2927', clay: { freq: 130, amp: 0.16, roughness: 0.34, sheen: 0.6, sheenColor: '#8d8580' }, traits: { crown: true } },
+      // the beard in clay (2026-09-27: the bead stubble read as a sketched texture): a soft layer
+      // round a bare mouth area with a T-shaped soul patch, short tufts in low relief
+      { type: 'sculpt', name: 'mateusz-k-beard', color: '#2c2927', clay: { freq: 230, amp: 0.16, roughness: 0.58, sheen: 0.6, sheenColor: '#8d8580' }, traits: { front: true } },
     ],
     // the plate reaches down round the mouth, as drawn
     face: { plate: { a: 0.78, b: 0.6, y: 0.2 }, eye: { dx: 0.22, y: 0.122, rx: 0.085, ry: 0.116 } },

@@ -18,11 +18,15 @@ const edge = hairline([
   [180, 22],
 ])
 
-// the cap under the leaves: thin at the hairline, rising toward the crown
-// (the design's pompadour stands ≈ 0.28 R above the head, flat-topped; the leaves add the last few hundredths)
+// the cap under the leaves: thin at the hairline, rising toward the crown (the design's
+// pompadour stands ≈ 0.28 R above the head, flat-topped; the leaves add the last few
+// hundredths). Close to the head down the sides and a touch smaller overall (Artur,
+// 2026-09-26: the sides stood out past his outline)
 const outerAt = (yaw: number, p: number) => {
-  const u = Math.min(1, Math.max(0, (p - edge(yaw)) / 34))
-  return 1.02 + 0.17 * Math.sin((u * Math.PI) / 2) // rolls up from the hairline, round-shouldered
+  const u = Math.min(1, Math.max(0, (p - edge(yaw)) / 30))
+  const t = Math.min(1, Math.max(0, (p - 50) / 32))
+  const full = 0.075 + 0.08 * t * t * (3 - 2 * t)
+  return 1.02 + full * Math.sin((u * Math.PI) / 2) // rolls up from the hairline, round-shouldered
 }
 
 // the side part, on the left of the crown: from the front hairline over to the back
@@ -33,7 +37,7 @@ function tufts(): Prim[] {
   const out: Prim[] = []
   let g = 0
   const group = () => g++
-  const o = { outerAt, width: 0.24, lift: 0.1, radii: [0.042, 0.052, 0.046, 0.03, 0.01] }
+  const o = { outerAt, width: 0.23, lift: 0.07, radii: [0.038, 0.047, 0.042, 0.027, 0.01] }
   // from the part, rows of overlapping leaves combed over the top to the viewer's right,
   // their points lifting at the right side, as drawn; later rows run further back
   const rows = 10
@@ -52,7 +56,7 @@ function tufts(): Prim[] {
   // and a few falling from the part down to the left temple, pointing down-left
   for (let i = 0; i < 5; i++) {
     const u = i * 0.1
-    out.push(...leavesAlong(PART(u), onScalp(-80 - 40 * u, 38 - 6 * u), [[0.04, 0.55], [0.45, 1.02]], group, { ...o, width: 0.2, lift: 0.07 }))
+    out.push(...leavesAlong(PART(u), onScalp(-80 - 40 * u, 38 - 6 * u), [[0.04, 0.55], [0.45, 1.02]], group, { ...o, width: 0.2, lift: 0.04 }))
   }
   return out
 }

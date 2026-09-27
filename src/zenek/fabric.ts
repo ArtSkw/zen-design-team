@@ -47,7 +47,8 @@ export function fabric(color: string, o: FabricOpts = {}): Material {
           float vis = 1.0 - smoothstep(0.004, 0.01, px);  // stitches only where a pixel is finer than a stitch
           // the seam: a pressed groove, a faint dark line even from afar
           // (its bump only where a pixel resolves it: seen edge-on it would speckle)
-          float g = exp(-pow(vFab.x / 0.007, 2.0));
+          float gx = vFab.x / 0.007;
+          float g = exp(-gx * gx); // not pow(x, 2.0): pow of a negative is NaN on some GPUs (Metal)
           float gv = 1.0 - smoothstep(0.003, 0.008, px);
           fabH -= 0.003 * g * gv;
           diffuseColor.rgb *= 1.0 - 0.26 * g * (0.4 + 0.6 * gv);
@@ -83,7 +84,8 @@ export function fabric(color: string, o: FabricOpts = {}): Material {
           vec3 r2 = cross(normal, sx);
           float det = dot(sx, r1);
           vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
-          normal = normalize(abs(det) * normal - grad);
+          vec3 bumped = abs(det) * normal - grad;
+          if (dot(bumped, bumped) > 1e-24) normal = normalize(bumped); // degenerate derivatives: keep the normal (normalize(0) is NaN)
         }`,
       )
   }

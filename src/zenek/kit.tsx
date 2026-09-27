@@ -44,11 +44,79 @@ export type StubbleRegion = {
   jitter?: number
   color?: string
   seed?: number
+  /** 'lattice' (default): staggered rows; 'blue': scattered evenly but irregularly (no rows),
+   * `spacing` apart at least, thinning out over `falloff` degrees inside the outline */
+  scatter?: 'lattice' | 'blue'
+  falloff?: number
+}
+
+/** Signed distance to a closed 2D polygon (negative inside). */
+function polyDist(px: number, py: number, pts: [number, number][]) {
+  let d = Infinity
+  let sgn = 1
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i, i++) {
+    const [ax, ay] = pts[i]
+    const [bx, by] = pts[j]
+    const ex = bx - ax
+    const ey = by - ay
+    const wx = px - ax
+    const wy = py - ay
+    const t = Math.max(0, Math.min(1, (wx * ex + wy * ey) / (ex * ex + ey * ey)))
+    d = Math.min(d, (wx - ex * t) ** 2 + (wy - ey * t) ** 2)
+    const c1 = py >= ay
+    const c2 = py < by
+    const c3 = ex * wy > ey * wx
+    if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) sgn = -sgn
+  }
+  return sgn * Math.sqrt(d)
+}
+
+/**
+ * Blue-noise points (yaw, pitch) inside an outline: dart throwing at least `spacing` apart,
+ * measured on the head (yaw scaled by the latitude), accepted less often near the edge.
+ */
+function scatterBlue(poly: [number, number][], holes: [number, number][][], spacing: number, falloff: number, rng: () => number) {
+  const toM = ([yw, p]: [number, number]): [number, number] => [yw * Math.cos(p * D), p]
+  const mp = poly.map(toM)
+  const mh = holes.map((h) => h.map(toM))
+  const xs = mp.map((p) => p[0])
+  const ys = mp.map((p) => p[1])
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+  const cell = spacing / Math.SQRT2 // at most one point per cell
+  const grid = new Map<string, [number, number]>()
+  const out: [number, number][] = []
+  const tries = Math.ceil((((x1 - x0) * (y1 - y0)) / (spacing * spacing)) * 30)
+  for (let k = 0; k < tries; k++) {
+    const X = x0 + rng() * (x1 - x0)
+    const Y = y0 + rng() * (y1 - y0)
+    let sd = polyDist(X, Y, mp)
+    for (const h of mh) sd = Math.max(sd, -polyDist(X, Y, h))
+    if (sd > 0) continue
+    if (falloff > 0) {
+      const t = Math.min(1, -sd / falloff)
+      if (rng() > t * t * (3 - 2 * t)) continue
+    }
+    const gx = Math.floor(X / cell)
+    const gy = Math.floor(Y / cell)
+    let ok = true
+    for (let i = -2; i <= 2 && ok; i++)
+      for (let j = -2; j <= 2; j++) {
+        const q = grid.get(`${gx + i},${gy + j}`)
+        if (q && Math.hypot(q[0] - X, q[1] - Y) < spacing) {
+          ok = false
+          break
+        }
+      }
+    if (!ok) continue
+    grid.set(`${gx},${gy}`, [X, Y])
+    out.push([X / Math.cos(Y * D), Y])
+  }
+  return out
 }
 
 const bead = new SphereGeometry(1, 10, 7)
 
-export function Stubble({ regions, color, R, ghost }: { regions: StubbleRegion[]; color: string; R: number; ghost: boolean }) {
+export function Stubble({ regions, color, R, ghost, roughness = 0.62 }: { regions: StubbleRegion[]; color: string; R: number; ghost: boolean; roughness?: number }) {
   const groups = useMemo(() => {
     const byColor = new Map<string, Matrix4[]>()
     const o = new Object3D()
@@ -58,6 +126,30 @@ export function Stubble({ regions, color, R, ghost }: { regions: StubbleRegion[]
       const rng = mulberry32(reg.seed ?? 7)
       const poly = reg.angles ? reg.poly : reg.poly.map(([x, y]) => fromFront(x, y))
       const holes = (reg.holes ?? []).map((h) => (reg.angles ? h : h.map(([x, y]) => fromFront(x, y))))
+      const place = (yw: number, pt: number) => {
+        const pos = onHead(yw, pt, 1.006 + reg.size[2] * 0.3) // clear of a flush face plate too
+        const n = pos.clone().normalize()
+        // "down" along the surface, then turned by the flow / fan
+        up.set(0, 1, 0)
+        tangent.copy(up).addScaledVector(n, -up.dot(n)).normalize().negate()
+        const turn = ((reg.flow ?? 0) + (reg.fan ?? 0) * yw + (rng() - 0.5) * 14) * D
+        tangent.applyAxisAngle(n, -turn)
+        const bin = new Vector3().crossVectors(n, tangent)
+        const basis = new Matrix4().makeBasis(bin, tangent, n) // x = width, y = length, z = height
+        o.position.copy(pos)
+        o.quaternion.setFromRotationMatrix(basis)
+        o.scale.set(reg.size[0] * (0.85 + rng() * 0.3), reg.size[1] * (0.85 + rng() * 0.3), reg.size[2])
+        o.updateMatrix()
+        const c = reg.color ?? color
+        if (!byColor.has(c)) byColor.set(c, [])
+        byColor.get(c)!.push(o.matrix.clone())
+      }
+      // where the beads go: scattered, or staggered rows (placed as they are found — the draws
+      // from the seeded random stay in their old order, so lattice regions are unchanged)
+      if (reg.scatter === 'blue') {
+        for (const [yw, pt] of scatterBlue(poly, holes, reg.spacing, reg.falloff ?? 0, rng)) place(yw, pt)
+        continue
+      }
       const ys = poly.map((p) => p[0])
       const ps = poly.map((p) => p[1])
       const [p0, p1] = [Math.min(...ps), Math.max(...ps)]
@@ -69,27 +161,12 @@ export function Stubble({ regions, color, R, ghost }: { regions: StubbleRegion[]
           const yw = yaw + (rng() - 0.5) * step * j
           const pt = pitch + (rng() - 0.5) * reg.spacing * j
           if (!inside([yw, pt], poly) || holes.some((h) => inside([yw, pt], h))) continue
-          const pos = onHead(yw, pt, 1.006 + reg.size[2] * 0.3) // clear of a flush face plate too
-          const n = pos.clone().normalize()
-          // "down" along the surface, then turned by the flow / fan
-          up.set(0, 1, 0)
-          tangent.copy(up).addScaledVector(n, -up.dot(n)).normalize().negate()
-          const turn = ((reg.flow ?? 0) + (reg.fan ?? 0) * yw + (rng() - 0.5) * 14) * D
-          tangent.applyAxisAngle(n, -turn)
-          const bin = new Vector3().crossVectors(n, tangent)
-          const basis = new Matrix4().makeBasis(bin, tangent, n) // x = width, y = length, z = height
-          o.position.copy(pos)
-          o.quaternion.setFromRotationMatrix(basis)
-          o.scale.set(reg.size[0] * (0.85 + rng() * 0.3), reg.size[1] * (0.85 + rng() * 0.3), reg.size[2])
-          o.updateMatrix()
-          const c = reg.color ?? color
-          if (!byColor.has(c)) byColor.set(c, [])
-          byColor.get(c)!.push(o.matrix.clone())
+          place(yw, pt)
         }
       }
     }
-    return [...byColor.entries()].map(([c, ms]) => ({ mat: new MeshStandardMaterial({ color: new Color(c), roughness: 0.62 }), ms }))
-  }, [regions, color])
+    return [...byColor.entries()].map(([c, ms]) => ({ mat: new MeshStandardMaterial({ color: new Color(c), roughness }), ms }))
+  }, [regions, color, roughness])
   return (
     <group scale={R}>
       {groups.map((g, i) => (

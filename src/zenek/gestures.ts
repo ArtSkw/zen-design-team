@@ -1,6 +1,8 @@
 import { Vector3 } from 'three'
 import { smoothstep } from '../lib/anim'
 import type { HeadTraits } from './parts'
+import { CANON } from './proportions'
+import { BALL } from './edyta-layout'
 
 // Idle gestures for a Zenek, authored as small parametric curves over u ∈ [0, 1]:
 // what a motion designer would keyframe, written as functions so every character
@@ -9,21 +11,22 @@ import type { HeadTraits } from './parts'
 // are radians added to the head; `sy` stretches the body. Amplitudes are tiny on
 // purpose — a toy, not a cartoon.
 
-export type GestureKind = 'talk' | 'look' | 'scratch' | 'wave' | 'stretch' | 'nod' | 'tilt' | 'laugh' | 'shrug'
+export type GestureKind = 'talk' | 'look' | 'scratch' | 'wave' | 'stretch' | 'nod' | 'tilt' | 'laugh' | 'shrug' | 'gaze'
 /** hl/hr move the hands (or a jointed arm's shoulder); al/ar raise a jointed arm out to the side, bl/br bend its elbow (radians). */
-export type Offsets = { hl: Vector3; hr: Vector3; pitch: number; yaw: number; roll: number; sy: number; al: number; ar: number; bl: number; br: number }
+export type Offsets = { hl: Vector3; hr: Vector3; pitch: number; yaw: number; roll: number; sy: number; al: number; ar: number; bl: number; br: number; glow: number }
 
-export const DURATION: Record<GestureKind, number> = { talk: 3.2, look: 2.9, scratch: 2.4, wave: 1.7, stretch: 2.0, nod: 1.3, tilt: 2.6, laugh: 1.5, shrug: 1.35 }
+export const DURATION: Record<GestureKind, number> = { talk: 3.2, look: 2.9, scratch: 2.4, wave: 1.7, stretch: 2.0, nod: 1.3, tilt: 2.6, laugh: 1.5, shrug: 1.35, gaze: 3.8 }
 
-/** Gestures a character's parts allow: nobody scratches through their hair. */
-export const allowed = (kind: GestureKind, t: HeadTraits) => !(kind === 'scratch' && t.crown)
+/** Gestures a character's parts allow: nobody scratches through their hair; only a crystal ball can be gazed into. */
+export const allowed = (kind: GestureKind, t: HeadTraits) => !(kind === 'scratch' && t.crown) && (kind !== 'gaze' || !!t.holds)
 
-export const offsets = (): Offsets => ({ hl: new Vector3(), hr: new Vector3(), pitch: 0, yaw: 0, roll: 0, sy: 0, al: 0, ar: 0, bl: 0, br: 0 })
+export const offsets = (): Offsets => ({ hl: new Vector3(), hr: new Vector3(), pitch: 0, yaw: 0, roll: 0, sy: 0, al: 0, ar: 0, bl: 0, br: 0, glow: 0 })
 export function resetOffsets(o: Offsets) {
   o.hl.set(0, 0, 0)
   o.hr.set(0, 0, 0)
   o.pitch = o.yaw = o.roll = o.sy = 0
   o.al = o.ar = o.bl = o.br = 0
+  o.glow = 0
 }
 
 /** Attack / release envelope: 0 → 1 over `a`, 1 → 0 over the last `r`. */
@@ -38,6 +41,14 @@ const NO_TRAITS: HeadTraits = { crown: false, longSides: false, front: false }
  * rhythm); `traits` keep the hands out of hair and beards.
  */
 export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur = DURATION[kind], traits: HeadTraits = NO_TRAITS) {
+  gestureRaw(kind, u, side, o, dur, traits)
+  // a paw holding something moves gently: a third of the gesture (one gesture a frame, so this
+  // scales only its own) — except in the gesture made for what it holds
+  if (traits.holds && kind !== 'gaze') (traits.holds === 'r' ? o.hr : o.hl).multiplyScalar(HOLD)
+}
+const HOLD = 0.35
+
+function gestureRaw(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur: number, traits: HeadTraits) {
   const hand = side > 0 ? o.hr : o.hl
   switch (kind) {
     case 'talk': {
@@ -99,6 +110,23 @@ export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, 
         hand.x += side * 0.09 * swing // to (1.0, 0.12, 0.76) R: below the glasses, in front of the hair
         hand.y += 0.45 * e
         hand.z += 0.38 * e
+      } else if (traits.collar || traits.sideWave) {
+        // a thick collar with lapels on the shoulders: the paw rises beside the body to shoulder
+        // height, only a little forward — raised in front (as the others wave) it stood out past
+        // his face whenever he turned to talk and the far paw was the one waving (Artur,
+        // 2026-09-26); forward first, then up, clear of the lapel, a narrow swing.
+        // scripts/check-hands.mjs keeps it clear.
+        const fwd = smoothstep(Math.min(1, e / 0.55))
+        const up = smoothstep(Math.max(0, (e - 0.35) / 0.65))
+        hand.x += side * (0.15 * e + 0.05 * swing * up) // to (1.20, 0.0, 0.28) R; it swings only while it is up
+        hand.y += 0.33 * up
+        hand.z += 0.1 * fwd
+      } else if (traits.cups) {
+        // headphone cups on the sides reaching down near the hands: lower still and further
+        // forward, clear of the cups' front corners (≥ 0.07 R)
+        hand.x += side * (0.05 * e + 0.1 * swing) // to (1.10, −0.10, 0.85) R
+        hand.y += 0.23 * e
+        hand.z += 0.67 * e
       } else if (traits.crown) {
         // hair on top: a lower wave at shoulder height, under the hair's edge
         hand.x += side * (0.14 * e + 0.1 * swing) // to (1.19, 0.07, 0.73) R
@@ -127,9 +155,10 @@ export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, 
         break
       }
       const e = win(u, 0.36, 0.42)
+      const lift = traits.cups ? 0.2 : 0.3 // under headphone cups, a lower stretch
       o.sy += 0.045 * e
-      o.hl.y += 0.3 * e
-      o.hr.y += 0.3 * e
+      o.hl.y += lift * e
+      o.hr.y += lift * e
       o.hl.x -= 0.16 * e
       o.hr.x += 0.16 * e
       o.hl.z += 0.12 * e
@@ -163,6 +192,32 @@ export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, 
       o.hr.z += e * 0.1
       break
     }
+    case 'gaze': {
+      // the fortune teller (trait `holds`: a crystal ball): she brings the ball round in front of her
+      // in an arc and leans in to peer, turning it in small slow circles, the ball glowing brighter —
+      // then a little hop, head up and a flash, "aha!", and back. Only the ball paw moves (Artur,
+      // 2026-09-27: the other paw hovering beside it crowded it); it travels on an arc round the
+      // body (a straight line would pass through it), clear of the face-framing locks, the ball
+      // held below the eyes.
+      const s = traits.holds === 'l' ? -1 : 1
+      const k = win(u, 0.2, 0.17) // out and back
+      const pe = smoothstep((u - 0.18) / 0.12) * smoothstep((0.74 - u) / 0.08) // peering
+      const aha = Math.exp(-(((u - 0.765) / 0.035) ** 2))
+      const H = CANON.hand
+      const restB = _gA.set(s * H.x, H.y, H.z)
+      const ballT = _gB.set(s * 0.22, -0.36, 1.3)
+      const pawT = _gC.set(ballT.x - s * BALL.at[0], ballT.y - BALL.at[1], ballT.z - BALL.at[2])
+      const pB = arcBetween(restB, pawT, k, 0.25, _gD)
+      const c = TAU * 1.4 * (u - 0.2) // turning the ball in small slow circles as she peers
+      pB.x += s * 0.03 * Math.cos(c) * pe
+      pB.y += 0.03 * Math.sin(c) * pe
+      ;(s > 0 ? o.hr : o.hl).add(pB.sub(restB))
+      o.pitch += 0.09 * pe - 0.13 * aha // leaning in to peer; the head pops up at the "aha"
+      o.roll += 0.05 * Math.sin(TAU * 0.9 * u) * pe
+      o.sy += 0.035 * aha - 0.012 * pe // a hop
+      o.glow += 0.25 * k + 0.55 * pe + aha
+      break
+    }
     case 'shrug': {
       // "you know?": hands out and up, the body dips, the head tips — and back
       const e = win(u, 0.3, 0.42)
@@ -178,4 +233,26 @@ export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, 
       break
     }
   }
+}
+
+const _gA = new Vector3()
+const _gB = new Vector3()
+const _gC = new Vector3()
+const _gD = new Vector3()
+/**
+ * A point on an arc round the body from `a` to `b` (both in the hands' frame, R units) at `k`:
+ * yaw, pitch and distance from the body's centre interpolated, bulging `bump` further out mid-way,
+ * so a paw carried from the side to the front never passes through the body or the hair.
+ */
+function arcBetween(a: Vector3, b: Vector3, k: number, bump: number, out: Vector3) {
+  const ya = Math.atan2(a.x, a.z)
+  const yb = Math.atan2(b.x, b.z)
+  const ra = a.length()
+  const rb = b.length()
+  const pa = Math.asin(a.y / ra)
+  const pb = Math.asin(b.y / rb)
+  const yaw = ya + (yb - ya) * k
+  const pitch = pa + (pb - pa) * k
+  const r = ra + (rb - ra) * k + bump * Math.sin(Math.PI * k)
+  return out.set(r * Math.cos(pitch) * Math.sin(yaw), r * Math.sin(pitch), r * Math.cos(pitch) * Math.cos(yaw))
 }

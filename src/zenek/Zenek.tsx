@@ -6,7 +6,7 @@ import { CANON, ZR, faceOf, type FaceOverride } from './proportions'
 import { capGeometry, onSphere } from './geometry'
 import { BODY, BODY_AO, EYE_MAT, PLATE_MAT, ghostOf } from './materials'
 import { useSculpt } from './sculptAsset'
-import { Part, isFacePart, type PartConfig } from './parts'
+import { Part, handOf, isFacePart, type PartConfig } from './parts'
 import { store, useStore } from '../lib/store'
 import type { ArmSpec, Seat } from '../cast/team'
 
@@ -115,7 +115,7 @@ export function Zenek({ id, refs, parts, seat, face, arms, ghost = false, onTap 
             <Part key={`f${i}`} cfg={p} ctx={ctx} />
           ))}
         </group>
-        {parts.filter((p) => !isFacePart(p)).map((p, i) => (
+        {parts.filter((p) => !isFacePart(p) && !handOf(p)).map((p, i) => (
           <Part key={`h${i}`} cfg={p} ctx={ctx} />
         ))}
       </group>
@@ -135,9 +135,15 @@ export function Zenek({ id, refs, parts, seat, face, arms, ghost = false, onTap 
           <>
             <group ref={refs.handL} position={HAND_L}>
               <mesh geometry={handGeo} material={black} raycast={rc} castShadow />
+              {parts.filter((p) => handOf(p) === 'l').map((p, i) => (
+                <Part key={`l${i}`} cfg={p} ctx={ctx} />
+              ))}
             </group>
             <group ref={refs.handR} position={HAND_R}>
               <mesh geometry={handGeo} material={black} raycast={rc} castShadow />
+              {parts.filter((p) => handOf(p) === 'r').map((p, i) => (
+                <Part key={`r${i}`} cfg={p} ctx={ctx} />
+              ))}
             </group>
           </>
         )}

@@ -25,6 +25,11 @@ export function smin(a: number, b: number, k: number) {
 }
 /** Smooth maximum (smooth intersection / subtraction). */
 export const smax = (a: number, b: number, k: number) => -smin(-a, -b, k)
+/** A number → a fixed pseudo-random value in [0, 1) (per lock, per tuft). */
+export const hash = (i: number) => {
+  const s = Math.sin(i * 127.1 + 311.7) * 43758.5453
+  return s - Math.floor(s)
+}
 
 /**
  * A cone with rounded ends between a (radius ra) and b (radius rb) — a tuft, or one

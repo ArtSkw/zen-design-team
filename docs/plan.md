@@ -549,9 +549,59 @@
 > `scripts/lines-sheet.mjs [phone]` (every line in its bubble → `shots/lines-*.png`),
 > `scripts/debug-bubble-anim.mjs` (the motions scrubbed frame by frame).
 >
+> **Round 33 (2026-09-25) — Karol and Magda J.** Karol's olive fisherman beanie is geometry,
+> like Łukasz D's cap (`src/zenek/beanie.tsx`, knit shader `knit.ts`): the cuff, its fold
+> and a rounded-cone crown over the head's yaw, 68 round ribs as silhouette and per-pixel
+> relief. His goatee is a sculpt of shingled flame-shaped locks converging on a point;
+> Artur's review (2026-09-26): the moustache trimmed shorter and slimmer, the grey strands
+> (they read as threads) replaced by a greyish tone — a gradient to grey down the beard and
+> a silvery sheen. Magda J's hair is one shell carved into wavy
+> locks by an analytic pattern (no lock primitives — they fused into lumps), sitting
+> behind the head's outline as drawn; her AirPods Max are geometry
+> (`src/zenek/airpods.tsx`, four draw calls) with cushions pressed onto the head. New
+> trait `cups` keeps her wave and stretch clear of the cups. 12 of 14 built. Fix the next
+> day: the floor flashed beside Krystian and Mirek on Artur's Mac — the beanie's knit shader
+> gave NaN in the floor's reflection pass (seen from below), and the reflector's blur smeared
+> it into blocks; Łukasz D's cap had NaN on half of every panel (`pow` of a negative seam
+> distance). Both shaders are guarded (no `pow` of a signed value, no `normalize` of zero);
+> `scripts/probe-nan.mjs` finds such pixels on the real GPU, which swiftshader never shows.
+>
+> **Round 34 (2026-09-26) — Mirek, and a round of refinements.** Mirek built: tousled
+> side-swept hair (Krystian's leaves, mirrored), a leather flight jacket as sculpts in two new
+> materials (`src/zenek/leather.ts`: leather, shearling) with its trim in code
+> (`src/zenek/jacket.tsx`: zip, snaps, two patches) from one layout (`jacket-layout.ts`);
+> sleeves left off, hands bare. New checks: `scripts/check-hands.mjs` (hands' surfaces vs a
+> character's sculpts through every gesture) and `scripts/check-fit.mjs` (headphones vs hair).
+> Refinements at Artur's word: Karol's moustache trimmed and the beard greyish instead of grey
+> strands; bigger plates for Karol and Artur so the white meets the facial hair; Krystian's
+> stubble as slim scattered dashes; Magda J's hair over the crown under the headphones, a lower
+> hairline, close to the body behind, and a cartoon kiss curl; the AirPods cups had been
+> inside out (see-through) and the hair now keeps clear of them. 13 of 14 built (Edyta left).
+>
+> **Round 35 (2026-09-27) — Edyta, the fourteenth.** The storyteller: loose blond waves (one
+> carved shell), a printed kerchief with a knot (`kerchief.ts`), hoops, bangles and a crystal ball
+> with a ray-marched nebula (`trinkets.tsx`), paw-held parts rendered in the hand groups; traits
+> `holds` (the ball paw moves gently) and `sideWave`. `check-hands.mjs --turn` now carries props
+> and turns the head relative to the hands as motion.ts does — it also flags Aneta's talk/wave and
+> Magda J's look brushing their hair when the head is turned toward that side (open). A Metal NaN
+> in the ball's first shader (pow of a negative, a reversed smoothstep) was caught by
+> `probe-nan.mjs` before it could flash the floor. All 14 built.
+>
+> **Pre-push pass (2026-09-27).** Security: `npm audit` clean (dev deps too), no secrets in the
+> tree or anywhere in git history, no DOM sinks; the query string reaches no fetch (sculpt names
+> come from the cast, `?lab=` is matched against it); the production build (`vite preview`)
+> loads all 26 sculpts under the CSP with no errors and no request leaving the origin. The
+> design-check hooks `window.__title` / `__dust` are dev-only now, like `__gl` (in production
+> `__title` also held the title's draw closure for the page's life). Clean-up: one shared
+> `smooth(a, b, v)` and `keyed(keys)` in `src/lib/anim.ts` and `hash` in `sculpt.ts` replace 15
+> identical copies across the new characters' files (every sculpt field sampled before and after:
+> bit-identical, so no re-bake; Karol's close-up renders pixel-identical); the dead `?grid`,
+> `?shadow`, `?progress` flags removed.
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
-> designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; 6 characters pending; JS
-> JS ≈ 383 KB gz in all (first chunk 82 KB), ~33 KB over the 350 budget in sum.
+> designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; all 14 built;
+> JS ≈ 405 KB gz in all (first chunk 86 KB, Scene 209 KB), ~55 KB over the 350 budget in sum
+> (Rounds 33–35 added ~22 KB: the beanie, AirPods, jacket, trinkets and their shaders).
 
 ---
 

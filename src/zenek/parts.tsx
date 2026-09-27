@@ -9,6 +9,12 @@ import { useSculpt } from './sculptAsset'
 import { Buttons, Headphones, SkinPatch, Stubble, SunglassesRect, type StubbleRegion } from './kit'
 import { plaid } from './plaid'
 import { Cap } from './cap'
+import { Beanie } from './beanie'
+import { AirpodsMax, type AirpodsOpts } from './airpods'
+import { JacketTrim } from './jacket'
+import { fleece, leather } from './leather'
+import { kerchief } from './kerchief'
+import { Bangles, CrystalBall } from './trinkets'
 
 // One bespoke reconstruction per approved design (docs/cast/*.png).
 export type PartConfig =
@@ -17,19 +23,34 @@ export type PartConfig =
   // a baked sculpt (src/zenek/sculpts/, public/sculpts/<name>.bin), worn in the head frame
   | { type: 'sculpt'; name: string; color: string; clay?: ClayOpts; traits?: Partial<HeadTraits> }
   // the kit (src/zenek/kit.tsx), head frame
-  | { type: 'stubble'; color: string; regions: StubbleRegion[] }
+  | { type: 'stubble'; color: string; regions: StubbleRegion[]; roughness?: number }
   | { type: 'skin'; at: [number, number]; size: [number, number]; color: string; opacity: number }
   | { type: 'sunglasses-rect'; top: number; bottom: number; inner: number; outer: number; rim: number; bend?: number }
   | { type: 'headphones'; pitch?: number; cupH?: number; cupW?: number }
   // a six-panel cap worn backwards (src/zenek/cap.tsx), head frame
   | { type: 'cap'; color: string; under?: string }
+  // a ribbed fisherman beanie with a folded cuff (src/zenek/beanie.tsx), head frame
+  | { type: 'beanie'; color: string }
+  // AirPods Max: rounded cups on steel arms, a canopy band over the hair (src/zenek/airpods.tsx), head frame
+  | ({ type: 'airpods' } & AirpodsOpts)
   // a garment: a baked sculpt in the tartan (src/zenek/plaid.ts), head frame
   | { type: 'shirt'; name: string; axis?: 'body' | 'collar'; shade?: number }
   | { type: 'buttons'; at: [number, number][]; lift: number; color?: string }
+  // a garment sculpt in leather or shearling (src/zenek/leather.ts), head frame
+  | { type: 'garment'; name: string; look: 'leather' | 'fleece'; color: string }
+  // Mirek's jacket trim: zip, snaps, patches (src/zenek/jacket.tsx), head frame
+  | { type: 'jacket-trim' }
+  // Edyta's kerchief: a sculpt in printed cotton (src/zenek/kerchief.ts), head frame
+  | { type: 'kerchief'; name: string; color: string; gold: string }
+  // Edyta's trinkets (src/zenek/trinkets.tsx), in a paw's frame ('l' = the left hand group, the viewer's left)
+  | { type: 'bangles'; hand: 'l' | 'r' }
+  | { type: 'crystal-ball'; hand: 'l' | 'r' }
 
 // Face parts live in the plate frame (arc coords around the plate centre);
 // head parts live in the head frame (yaw/pitch on the body sphere, or the frontal plane).
 export const isFacePart = (p: PartConfig) => p.type === 'face-janek' || p.type === 'glasses-round'
+/** Parts worn or held in a paw: rendered in that hand's group, so they follow its gestures. */
+export const handOf = (p: PartConfig): 'l' | 'r' | null => (p.type === 'bangles' || p.type === 'crystal-ball' ? p.hand : null)
 
 export type PartCtx = { R: number; face: ReturnType<typeof faceOf>; ghost: boolean }
 
@@ -38,14 +59,24 @@ export type PartCtx = { R: number; face: ReturnType<typeof faceOf>; ghost: boole
  * `crown` — hair or a hat on top (no head scratching, a lower wave); `longSides` —
  * hair hanging beside the body (hands rest and gesture in front of it); `front` —
  * something in front of the body (a full beard); `bulky` — sculpted arms (they wave out to the side,
- * never across the face).
+ * never across the face); `cups` — headphone cups forward on the sides of the head, reaching
+ * down near the hands (the wave comes lower and further forward, the stretch lifts less);
+ * `collar` — a thick collar with lapels over the shoulders (the wave rises beside the body);
+ * `sideWave` — the same wave beside the body, for hair and trinkets framing the face;
+ * `holds` — a paw holding something (a crystal ball): it moves gently in gestures, never waves it about;
+ * `rigidPaws` — the paws turn and tilt with the body exactly (not a beat behind), so long hair
+ * just behind them never swings into them.
  */
-export type HeadTraits = { crown: boolean; longSides: boolean; front: boolean; waveSide?: 1 | -1; bulky?: boolean }
+export type HeadTraits = { crown: boolean; longSides: boolean; front: boolean; waveSide?: 1 | -1; bulky?: boolean; cups?: boolean; collar?: boolean; sideWave?: boolean; holds?: 'l' | 'r'; rigidPaws?: boolean }
 export function headTraits(parts: PartConfig[]): HeadTraits {
   const t: HeadTraits = { crown: false, longSides: false, front: false }
   for (const p of parts) {
     if (p.type === 'sculpt') Object.assign(t, p.traits)
-    if (p.type === 'headphones' || p.type === 'cap') t.crown = true
+    if (p.type === 'headphones' || p.type === 'cap' || p.type === 'beanie' || p.type === 'airpods') t.crown = true
+    if (p.type === 'airpods') t.cups = true
+    if (p.type === 'garment' && p.look === 'fleece') t.collar = true // a shearling collar
+    if (p.type === 'kerchief') t.crown = true
+    if (p.type === 'crystal-ball') t.holds = p.hand
   }
   return t
 }
@@ -174,6 +205,19 @@ function SculptPart({ cfg, ctx }: { cfg: Extract<PartConfig, { type: 'sculpt' }>
   return <mesh geometry={g} material={m(mat, ctx.ghost)} scale={ctx.R} raycast={ctx.ghost ? noRaycast : undefined} castShadow />
 }
 
+function GarmentPart({ cfg, ctx }: { cfg: Extract<PartConfig, { type: 'garment' }>; ctx: PartCtx }) {
+  const g = useSculpt(cfg.name)
+  if (!g) return null
+  const mat = cfg.look === 'leather' ? leather(cfg.color) : fleece(cfg.color)
+  return <mesh geometry={g} material={m(mat, ctx.ghost)} scale={ctx.R} raycast={ctx.ghost ? noRaycast : undefined} castShadow receiveShadow />
+}
+
+function KerchiefPart({ cfg, ctx }: { cfg: Extract<PartConfig, { type: 'kerchief' }>; ctx: PartCtx }) {
+  const g = useSculpt(cfg.name)
+  if (!g) return null
+  return <mesh geometry={g} material={m(kerchief(cfg.color, cfg.gold), ctx.ghost)} scale={ctx.R} raycast={ctx.ghost ? noRaycast : undefined} castShadow receiveShadow />
+}
+
 function ShirtPart({ name, axis = 'body', shade, ctx }: { name: string; axis?: 'body' | 'collar'; shade?: number; ctx: PartCtx }) {
   const g = useSculpt(name)
   if (!g) return null
@@ -182,6 +226,16 @@ function ShirtPart({ name, axis = 'body', shade, ctx }: { name: string; axis?: '
 
 export function Part({ cfg, ctx }: { cfg: PartConfig; ctx: PartCtx }) {
   switch (cfg.type) {
+    case 'garment':
+      return <GarmentPart cfg={cfg} ctx={ctx} />
+    case 'jacket-trim':
+      return <JacketTrim R={ctx.R} ghost={ctx.ghost} />
+    case 'kerchief':
+      return <KerchiefPart cfg={cfg} ctx={ctx} />
+    case 'bangles':
+      return <Bangles R={ctx.R} ghost={ctx.ghost} mirror={cfg.hand === 'r'} />
+    case 'crystal-ball':
+      return <CrystalBall R={ctx.R} ghost={ctx.ghost} mirror={cfg.hand === 'l'} />
     case 'shirt':
       return <ShirtPart name={cfg.name} axis={cfg.axis} shade={cfg.shade} ctx={ctx} />
     case 'buttons':
@@ -189,7 +243,7 @@ export function Part({ cfg, ctx }: { cfg: PartConfig; ctx: PartCtx }) {
     case 'sculpt':
       return <SculptPart cfg={cfg} ctx={ctx} />
     case 'stubble':
-      return <Stubble regions={cfg.regions} color={cfg.color} R={ctx.R} ghost={ctx.ghost} />
+      return <Stubble regions={cfg.regions} color={cfg.color} R={ctx.R} ghost={ctx.ghost} roughness={cfg.roughness} />
     case 'skin':
       return ctx.ghost ? null : <SkinPatch at={cfg.at} size={cfg.size} color={cfg.color} opacity={cfg.opacity} R={ctx.R} />
     case 'sunglasses-rect':
@@ -198,6 +252,12 @@ export function Part({ cfg, ctx }: { cfg: PartConfig; ctx: PartCtx }) {
       return <Headphones R={ctx.R} ghost={ctx.ghost} pitch={cfg.pitch} cupH={cfg.cupH} cupW={cfg.cupW} />
     case 'cap':
       return <Cap R={ctx.R} ghost={ctx.ghost} color={cfg.color} under={cfg.under} />
+    case 'beanie':
+      return <Beanie R={ctx.R} ghost={ctx.ghost} color={cfg.color} />
+    case 'airpods': {
+      const { type: _t, ...opts } = cfg
+      return <AirpodsMax R={ctx.R} ghost={ctx.ghost} {...opts} />
+    }
     case 'face-janek':
       return <FaceJanek ctx={ctx} />
     case 'glasses-round':

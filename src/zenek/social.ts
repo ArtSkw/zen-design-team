@@ -117,7 +117,7 @@ export const laughOf = (id: string) => (SOCIAL_ON ? circleOf.get(id)?.laughAt ??
 export const circleMates = (id: string) => circleOf.get(id)?.ids.filter((x) => x !== id) ?? []
 
 // ---- things worth a glance -------------------------------------------------------
-export type SocialEvent = { seq: number; id: string; kind: 'wave' | 'stretch' | 'laugh'; x: number; y: number; z: number; t: number }
+export type SocialEvent = { seq: number; id: string; kind: 'wave' | 'stretch' | 'laugh' | 'gaze'; x: number; y: number; z: number; t: number }
 const events: SocialEvent[] = []
 let seq = 0
 

@@ -4,6 +4,8 @@ export const smoothstep = (t: number) => {
   const x = clamp(t, 0, 1)
   return x * x * (3 - 2 * x)
 }
+// GLSL's smoothstep(a, b, v): 0 at a, 1 at b, eased between (a > b runs it the other way).
+export const smooth = (a: number, b: number, v: number) => smoothstep((v - a) / (b - a))
 // Overshoot ease: settles from above; k controls the bounce (1.70158 = classic).
 export const easeOutBack = (t: number, k = 1.2) => {
   const x = clamp(t, 0, 1) - 1
@@ -32,6 +34,29 @@ export function hermite(p0: number, v0: number, p1: number, v1: number, d: numbe
   const u2 = u * u
   const u3 = u2 * u
   return (2 * u3 - 3 * u2 + 1) * p0 + (u3 - 2 * u2 + u) * d * v0 + (3 * u2 - 2 * u3) * p1 + (u3 - u2) * d * v1
+}
+
+// A smooth curve through [x, y] keys (cubic Hermite, finite-difference tangents), flat
+// past the first and the last key.
+export function keyed(keys: [number, number][]) {
+  const k = [...keys].sort((a, b) => a[0] - b[0])
+  const slope = (i: number) => {
+    const a = k[Math.max(0, i - 1)]
+    const b = k[Math.min(k.length - 1, i + 1)]
+    return (b[1] - a[1]) / (b[0] - a[0])
+  }
+  return (x: number) => {
+    if (x <= k[0][0]) return k[0][1]
+    for (let i = 1; i < k.length; i++)
+      if (x <= k[i][0]) {
+        const h = k[i][0] - k[i - 1][0]
+        const t = (x - k[i - 1][0]) / h
+        const t2 = t * t
+        const t3 = t2 * t
+        return (2 * t3 - 3 * t2 + 1) * k[i - 1][1] + (t3 - 2 * t2 + t) * h * slope(i - 1) + (-2 * t3 + 3 * t2) * k[i][1] + (t3 - t2) * h * slope(i)
+      }
+    return k[k.length - 1][1]
+  }
 }
 
 // Exponential damping toward a target (frame-rate independent).
