@@ -1,0 +1,309 @@
+{
+ "lake": [
+  {
+   "end": 30,
+   "file": "lake-3.mp3",
+   "loop": true,
+   "peak": 0.5345,
+   "rms": 0.01797,
+   "seconds": 30,
+   "start": 0,
+   "level": 0.94
+  },
+  {
+   "end": 30,
+   "file": "lake-1.mp3",
+   "loop": true,
+   "peak": 0.6044,
+   "rms": 0.01743,
+   "seconds": 30,
+   "start": 0,
+   "level": 1.06
+  }
+ ],
+ "breeze": [
+  {
+   "end": 30,
+   "file": "breeze-1.mp3",
+   "loop": true,
+   "peak": 0.08,
+   "rms": 0.00916,
+   "seconds": 30,
+   "start": 0,
+   "level": 0.99
+  },
+  {
+   "end": 30,
+   "file": "breeze-2.mp3",
+   "loop": true,
+   "peak": 0.0459,
+   "rms": 0.01154,
+   "seconds": 30,
+   "start": 0,
+   "level": 1.5
+  }
+ ],
+ "songbird": [
+  {
+   "end": 3.3757,
+   "file": "songbird-1.mp3",
+   "loop": false,
+   "peak": 0.7953,
+   "rms": 0.09537,
+   "seconds": 4,
+   "start": 0.085
+  },
+  {
+   "end": 3.0372,
+   "file": "songbird-2.mp3",
+   "loop": false,
+   "peak": 0.7823,
+   "rms": 0.07106,
+   "seconds": 4,
+   "start": 0.3037
+  },
+  {
+   "end": 3.5018,
+   "file": "songbird-3.mp3",
+   "loop": false,
+   "peak": 0.8444,
+   "rms": 0.08693,
+   "seconds": 4,
+   "start": 0.4154
+  },
+  {
+   "end": 3.3655,
+   "file": "songbird-4.mp3",
+   "loop": false,
+   "peak": 0.9508,
+   "rms": 0.09267,
+   "seconds": 4,
+   "start": 0.3909
+  }
+ ],
+ "uguisu": [
+  {
+   "end": 3.6403,
+   "file": "uguisu-2.mp3",
+   "loop": false,
+   "peak": 1,
+   "rms": 0.16003,
+   "seconds": 4,
+   "start": 0.4516
+  },
+  {
+   "end": 3.3254,
+   "file": "uguisu-3.mp3",
+   "loop": false,
+   "peak": 1,
+   "rms": 0.09297,
+   "seconds": 4,
+   "start": 0.4979
+  }
+ ],
+ "gulls": [
+  {
+   "end": 2.3178,
+   "file": "gulls-1.mp3",
+   "loop": false,
+   "peak": 1,
+   "rms": 0.13117,
+   "seconds": 3,
+   "start": 0
+  },
+  {
+   "end": 2.529,
+   "file": "gulls-3.mp3",
+   "loop": false,
+   "peak": 0.9638,
+   "rms": 0.10485,
+   "seconds": 3,
+   "start": 0
+  }
+ ],
+ "fish": [
+  {
+   "end": 0.6787,
+   "file": "fish-1.mp3",
+   "hz": 407.11,
+   "loop": false,
+   "peak": 0.3774,
+   "rms": 0.02323,
+   "seconds": 1,
+   "start": 0
+  },
+  {
+   "end": 0.7944,
+   "file": "fish-3.mp3",
+   "hz": 1244.89,
+   "loop": false,
+   "peak": 0.0944,
+   "rms": 0.00337,
+   "seconds": 1,
+   "start": 0.0071
+  }
+ ],
+ "click": [
+  {
+   "end": 0.2191,
+   "file": "click-2.mp3",
+   "hz": 80.08,
+   "loop": false,
+   "peak": 0.7995,
+   "rms": 0.01984,
+   "seconds": 0.48,
+   "start": 0.0635
+  },
+  {
+   "end": 0.2408,
+   "file": "click-3.mp3",
+   "hz": 967.65,
+   "loop": false,
+   "peak": 0.6057,
+   "rms": 0.0146,
+   "seconds": 0.48,
+   "start": 0.0908
+  }
+ ],
+ "plip": [
+  {
+   "end": 0.48,
+   "file": "plip-2.mp3",
+   "hz": 881.52,
+   "loop": false,
+   "peak": 0.0999,
+   "rms": 0.01051,
+   "seconds": 0.48,
+   "start": 0
+  }
+ ],
+ "splash": [
+  {
+   "end": 0.7997,
+   "file": "splash-3.mp3",
+   "loop": false,
+   "peak": 0.2791,
+   "rms": 0.01693,
+   "seconds": 1,
+   "start": 0
+  },
+  {
+   "end": 0.6917,
+   "file": "splash-5.mp3",
+   "loop": false,
+   "peak": 0.727,
+   "rms": 0.04715,
+   "seconds": 1,
+   "start": 0.0232
+  }
+ ],
+ "bowl": [
+  {
+   "end": 2.4452,
+   "file": "bowl-3.mp3",
+   "hz": 817.59,
+   "loop": false,
+   "peak": 0.3999,
+   "rms": 0.01166,
+   "seconds": 5,
+   "start": 0
+  }
+ ],
+ "pen": [
+  {
+   "end": 10,
+   "file": "pen-1.mp3",
+   "loop": true,
+   "peak": 0.1237,
+   "rms": 0.00766,
+   "seconds": 10,
+   "start": 0
+  },
+  {
+   "end": 10,
+   "file": "pen-2.mp3",
+   "loop": true,
+   "peak": 0.0408,
+   "rms": 0.00298,
+   "seconds": 10,
+   "start": 0
+  }
+ ],
+ "dot": [
+  {
+   "end": 0.48,
+   "file": "dot-1.mp3",
+   "hz": 644.65,
+   "loop": false,
+   "peak": 0.2274,
+   "rms": 0.01813,
+   "seconds": 0.48,
+   "start": 0.0238
+  }
+ ],
+ "bell": [
+  {
+   "end": 3,
+   "file": "bell-3.mp3",
+   "hz": 2827.58,
+   "loop": false,
+   "peak": 0.8431,
+   "rms": 0.05589,
+   "seconds": 3,
+   "start": 0
+  }
+ ],
+ "air": [
+  {
+   "end": 2.0165,
+   "file": "air-1.mp3",
+   "loop": false,
+   "peak": 0.8283,
+   "rms": 0.08634,
+   "seconds": 2.48,
+   "start": 0.3645
+  }
+ ],
+ "kalimba": [
+  {
+   "end": 1.48,
+   "file": "kalimba-1.mp3",
+   "hz": 392.31,
+   "loop": false,
+   "peak": 0.0219,
+   "rms": 0.00392,
+   "seconds": 1.48,
+   "start": 0
+  },
+  {
+   "end": 1.48,
+   "file": "kalimba-2.mp3",
+   "hz": 329.73,
+   "loop": false,
+   "peak": 0.0401,
+   "rms": 0.00659,
+   "seconds": 1.48,
+   "start": 0
+  },
+  {
+   "end": 1.48,
+   "file": "kalimba-3.mp3",
+   "hz": 440.08,
+   "loop": false,
+   "peak": 0.0679,
+   "rms": 0.00874,
+   "seconds": 1.48,
+   "start": 0
+  },
+  {
+   "end": 1.48,
+   "file": "kalimba-4.mp3",
+   "hz": 440.76,
+   "loop": false,
+   "peak": 0.0409,
+   "rms": 0.00743,
+   "seconds": 1.48,
+   "start": 0
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Listen · ZEN Design Team sounds</title>
+    <!-- Development only (the build knows only index.html): the ElevenLabs takes in sound-raw/, to hear and pick. -->
+    <style>
+      :root { --page: #fdfdfc; --ink: #111214; --soft: #7a756e; --line: rgba(17, 18, 20, 0.08); --green: #22e243; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Nunito Variable', Nunito, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      main { max-width: 980px; margin: 0 auto; padding: 40px 20px 120px; }
+      h1 { font-size: 28px; margin: 0 0 6px; }
+      h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soft); margin: 40px 0 12px; }
+      p.lede { color: var(--soft); margin: 0 0 8px; max-width: 70ch; line-height: 1.5; }
+      .cue { border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; margin: 12px 0; background: #fff; }
+      .cue__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+      .cue__name { font-weight: 800; font-size: 18px; }
+      .cue__use { color: var(--soft); }
+      .cue__prompt { color: var(--soft); font-size: 12px; margin: 6px 0 10px; line-height: 1.4; }
+      .takes { display: flex; flex-wrap: wrap; gap: 8px; }
+      .take { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px 4px 4px; }
+      .take.on { border-color: var(--ink); }
+      .take small { color: var(--soft); font-size: 11px; }
+      button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 7px 14px; background: rgba(17, 18, 20, 0.06); color: var(--ink); cursor: pointer; }
+      button:hover { background: rgba(17, 18, 20, 0.1); }
+      button.play { width: 34px; height: 34px; padding: 0; }
+      button.playing { background: var(--ink); color: #fff; }
+      button:focus-visible, input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+      label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700; }
+      .standin { margin-left: auto; }
+      .mine { color: var(--soft); font-size: 11px; font-weight: 600; }
+      .bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(253, 253, 252, 0.94); backdrop-filter: blur(10px); border-top: 1px solid var(--line); }
+      .bar__in { max-width: 980px; margin: 0 auto; padding: 12px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .bar code { flex: 1 1 320px; font-size: 12px; color: var(--soft); overflow-wrap: anywhere; }
+      a.button { text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <main id="app">
+      <h1>Listen</h1>
+      <p class="lede">Every ElevenLabs take, trimmed, levelled and played through the room's own mix. The takes marked live are what the room plays now. Check the ones you like (two or more on a cue take turns in the room), then open the room with them, or copy the picks back to me.</p>
+    </main>
+    <div class="bar"><div class="bar__in">
+      <code id="picks"></code>
+      <button id="copy" type="button">Copy picks</button>
+      <a class="button" id="room" href="/"><button type="button">Hear them in the room</button></a>
+      <a class="button" id="room-fast" href="/"><button type="button">…skip the intro</button></a>
+    </div></div>
+    <script type="module" src="/src/sound/listen.ts"></script>
+  </body>
+</html>

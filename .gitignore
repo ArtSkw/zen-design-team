@@ -14,3 +14,6 @@ docs/**/*.svg
 docs/set/plate/
 # img2threejs working state and vendor GLBs
 img2/
+
+# ElevenLabs takes, auditioned locally; the picks go to public/sound/
+sound-raw/

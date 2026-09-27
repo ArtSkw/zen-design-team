@@ -1077,8 +1077,24 @@ room; Artur shares the link.
     −28, plane −26, lake + breeze −25 (RMS −42). Check with `node scripts/sound-render.mjs`
     then `scripts/sound-look.py` (levels + spectrograms in `shots/sound/`), and the wiring
     in the running app with `node scripts/debug-sound.mjs`.
-  - Next: record each sound in ElevenLabs (dry, one-shots, loops of 30 s), trim, tune the
-    pitched ones to the key, and swap them in cue by cue.
+  - Recordings (2026-09-27): ElevenLabs Sound Effects v2 through the API — prompts versioned
+    in `docs/sound/prompts.json`; `node scripts/sfx.mjs [--dry] [--only …] [--more n]`
+    generates missing takes into `sound-raw/` (git-ignored; key from `.env.local`, never
+    printed; 10 credits a second on the Starter plan; a cap per run); `scripts/sfx-decode.mjs`
+    + `scripts/sfx-look.py` measure them (trim, peak, RMS, pitch, loop seam; a sheet per cue;
+    `sound-raw/index.json`). Nothing is re-encoded: `src/sound/samples.ts` plays each take
+    trimmed, levelled to its cue (`TARGET`, calibrated through the mix) and tuned by
+    playback rate (`src/sound/key.ts`); beds are 12–20 s stretches crossfaded. A cue falls
+    back to its stand-in until its takes are in. Picks: `public/sound/picks.json` + the MP3s
+    beside it; in development `?take=lake:3,click:3+4` (or `none`) tries takes from
+    `sound-raw/`, and `listen.html` plays every take through the room's mix beside its
+    stand-in and builds that link. The Zeneks' boop stays synthesised (owner-directed); the
+    first chime takes were too busy, single-strike bells replace them.
+  - Published 2026-09-27 (Artur's picks, 29 takes, 2.97 MB, fetched low behind the room):
+    `node scripts/sfx-publish.mjs "lake:3+1,…"`. The beds are levelled as the ear hears
+    them (`scripts/loudness.py`, BS.1770 LUFS; plain RMS overrated the breeze, which was
+    mostly rumble): the breeze high-passed twice at 150 Hz, each lake stretch at −38 and
+    each breeze stretch at −41 LUFS through the mix (per-take `level` in `picks.json`).
   - Fixed on the way: the scene clock restarts when the 3D wakes after the title (R3F's
     `setFrameloop` zeroes it), which had left the rings on the water waiting forever;
     they now carry on across the jump.

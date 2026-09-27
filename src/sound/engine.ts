@@ -1,30 +1,23 @@
 import { P } from '../lib/params'
 import { store } from '../lib/store'
 import { clamp, lerp } from '../lib/anim'
-import { impulse, type Out } from './synth'
+import type { Out } from './synth'
+import { LEVEL, mixer, type BusName } from './mix'
+export type { BusName }
 
 // The sound's plumbing. Sound is on by default (owner-directed 2026-09-27), but a browser
 // plays nothing before the visitor's first gesture: the AudioContext is made and resumed
 // inside it, and whatever that gesture asked to sound plays the moment the context wakes.
 // So the finished loader asks for one press before the intro (src/ui/Press.tsx) — unless
 // the browser would let it sound anyway (`soundAllowed`).
-// Five buses are mixed into a shared open-air space and a gentle limiter; one on/off (the
-// control cluster) fades, is remembered, and falls silent with the tab. `?snd=0` turns
-// the whole layer off (screenshots).
-//
-//   ui     the controls: wood
-//   toy    the Zeneks: boops, bubbles, a splash on the water, their arrival
-//   near   the lake at the deck
-//   far    the hills: breeze, birds, gulls, the plane, fish
-//   title  the pen, and the bell as the title lets go
-export type BusName = 'ui' | 'toy' | 'near' | 'far' | 'title'
+// Five buses are mixed into a shared open-air space and a gentle limiter (src/sound/mix.ts);
+// one on/off (the control cluster) fades, is remembered, and falls silent with the tab.
+// `?snd=0` turns the whole layer off (screenshots).
 
 export const SOUND = P.flag('snd', true) && typeof window !== 'undefined' && 'AudioContext' in window
 /** "Press to continue" may be asked for; automated browsers go without unless `?press=1`. */
 export const PRESS = SOUND && P.flag('press', typeof navigator === 'undefined' || !navigator.webdriver)
 
-const LEVEL: Record<BusName, number> = { ui: 0.4, toy: 0.5, near: 0.5, far: 0.55, title: 0.7 }
-const SEND: Record<BusName, number> = { ui: 0.05, toy: 0.12, near: 0.1, far: 0.42, title: 0.16 }
 const KEY = 'zen-design-team:sound'
 
 let ctx: AudioContext | null = null
@@ -41,38 +34,6 @@ function stored() {
   }
 }
 if (SOUND) store.set({ soundOn: stored() })
-
-/** The mix: every bus through its tone into the master and the shared space, then the limiter. Offline too (scripts/sound-render.mjs). */
-export function mixer(c: BaseAudioContext) {
-  const limiter = c.createDynamicsCompressor()
-  limiter.threshold.value = -9
-  limiter.knee.value = 8
-  limiter.ratio.value = 8
-  limiter.attack.value = 0.002
-  limiter.release.value = 0.2
-  const out = c.createGain()
-  const master = c.createGain()
-  master.gain.value = 0.9
-  master.connect(limiter).connect(out).connect(c.destination)
-  const verb = c.createConvolver()
-  verb.buffer = impulse(c)
-  verb.connect(master)
-  const buses = {} as Record<BusName, { input: GainNode; tone: BiquadFilterNode }>
-  for (const name of Object.keys(LEVEL) as BusName[]) {
-    const input = c.createGain()
-    input.gain.value = LEVEL[name]
-    const tone = c.createBiquadFilter()
-    tone.type = 'lowpass'
-    tone.frequency.value = 18000
-    tone.Q.value = 0.5
-    const send = c.createGain()
-    send.gain.value = SEND[name]
-    input.connect(tone).connect(master)
-    tone.connect(send).connect(verb)
-    buses[name] = { input, tone }
-  }
-  return { out, buses }
-}
 
 function build() {
   const c = new AudioContext({ latencyHint: 'interactive' })

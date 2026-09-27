@@ -366,18 +366,19 @@ export type Pen = { set(speed: number, at: number): void; stop(at: number): void
  * The pen, live: silent in the air, scratching while it writes. `speed` is 0..1 of the
  * hand's fastest; faster is louder, brighter and denser, as a real nib is.
  */
-export function pen(o: Out, t: number, { level = 1 } = {}): Pen {
+export function pen(o: Out, t: number, { level = 1, take }: { level?: number; take?: { buf: AudioBuffer; level: number } | null } = {}): Pen {
   const ctx = o.ctx
   const src = ctx.createBufferSource()
-  src.buffer = scratchBuffer(ctx)
+  src.buffer = take?.buf ?? scratchBuffer(ctx) // a recorded pen when there is one (samples: penTake)
+  const scale = take ? take.level / 0.26 : 1 // the recording at its own level, the texture at its
   src.loop = true
   const hp = ctx.createBiquadFilter()
   hp.type = 'highpass'
-  hp.frequency.value = 900
+  hp.frequency.value = take ? 250 : 900
   const bp = ctx.createBiquadFilter()
   bp.type = 'bandpass'
   bp.frequency.value = 2400
-  bp.Q.value = 0.8
+  bp.Q.value = take ? 0.3 : 0.8 // a recording keeps its own colour: only a wide, gentle brightening with speed
   const g = ctx.createGain()
   g.gain.value = 0
   // the paper's body under the nib, a little below the scratch
@@ -393,9 +394,9 @@ export function pen(o: Out, t: number, { level = 1 } = {}): Pen {
     set(speed, at) {
       const s = clamp(speed, 0, 1)
       const down = s > 0
-      const a = down ? 0.26 * level * s ** 0.6 : 0
+      const a = down ? 0.26 * scale * level * s ** 0.6 : 0
       g.gain.setTargetAtTime(a, at, down ? 0.008 : 0.014)
-      gb.gain.setTargetAtTime(a * 0.5, at, down ? 0.01 : 0.016)
+      if (!take) gb.gain.setTargetAtTime(a * 0.5, at, down ? 0.01 : 0.016)
       bp.frequency.setTargetAtTime(1500 + 3400 * s, at, 0.02)
       src.playbackRate.setTargetAtTime(0.7 + 0.6 * s, at, 0.03)
     },

@@ -7,6 +7,7 @@ import { createServer } from 'vite'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 const argv = process.argv.slice(2)
+const arg = (k, d) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1] : d)
 const only = (argv[argv.indexOf('--only') + 1] ?? '').split(',').filter((s) => argv.includes('--only') && s)
 mkdirSync('shots/sound', { recursive: true })
 
@@ -16,15 +17,20 @@ const port = server.config.server.port
 const browser = await chromium.launch()
 const page = await browser.newPage()
 page.on('pageerror', (e) => console.log('pageerror:', e.message))
-await page.goto(`http://127.0.0.1:${port}/?intro=0&motion=0&snd=0`)
+// the recordings the scenes play: the published picks (public/sound/picks.json), or with
+// --takes "lake:1,…" others straight from sound-raw/
+const TAKES = arg('takes', '')
+await page.goto(`http://127.0.0.1:${port}/?intro=0&motion=0&snd=0${TAKES ? `&take=${TAKES}` : ''}`)
 await page.waitForFunction(() => document.querySelector('#root')?.childElementCount > 0)
 
 const scenes = await page.evaluate(async (only) => {
   const syn = await import('/src/sound/synth.ts')
-  const { mixer } = await import('/src/sound/engine.ts')
-  const { hz } = await import('/src/sound/cues.ts')
+  const { mixer } = await import('/src/sound/mix.ts')
+  const { hz } = await import('/src/sound/key.ts')
   const { TAP_SY, TAP_DUR } = await import('/src/zenek/tap.ts')
   const { mulberry32 } = await import('/src/lib/rng.ts')
+  const rec = await import('/src/sound/samples.ts')
+  await rec.preload()
   const SR = 48000
   const rng = mulberry32(7)
 
@@ -117,6 +123,39 @@ const scenes = await page.evaluate(async (only) => {
       const hum = syn.planeHum(b.far, 9)
       for (let i = 0; i <= 20; i++) hum.set(0.5 * Math.sin((Math.PI * i) / 20) ** 1.5, 0, 9 + (10 * i) / 20)
       return 20
+    },
+    // the recordings, one after another, as the room plays them (see the windows in the level check)
+    async takes(b) {
+      rec.shot(b.ui, 'click', 0.3)
+      rec.shot(b.toy, 'splash', 1.0)
+      rec.shot(b.toy, 'plip', 2.0)
+      rec.shot(b.ui, 'bowl', 3.0, { tuned: true })
+      rec.shot(b.title, 'dot', 6.0)
+      rec.shot(b.title, 'air', 6.5)
+      ;[1, 0.62, 0.4].forEach((level, i) => rec.shot(b.title, 'bell', 9 + i * 0.45, { level, tuned: true }))
+      for (let i = 0; i < 14; i++) rec.shot(b.toy, 'kalimba', 12 + i * 0.07, { hz: hz(i - 3), level: i === 13 ? 1 : 0.6 })
+      rec.shot(b.far, 'fish', 15)
+      rec.shot(b.far, 'songbird', 16)
+      rec.shot(b.far, 'uguisu', 21)
+      rec.shot(b.far, 'gulls', 26)
+      return 30
+    },
+    // the recorded beds alone, a long stretch
+    async takebed(b) {
+      const lake = rec.bed(b.near, 'lake', 0)
+      const breeze = rec.bed(b.far, 'breeze', 0)
+      lake.tick(30)
+      breeze.tick(30)
+      return 30
+    },
+    // each recorded bed on its own, for their loudness side by side
+    async lakebed(b) {
+      rec.bed(b.near, 'lake', 0).tick(30)
+      return 30
+    },
+    async breezebed(b) {
+      rec.bed(b.far, 'breeze', 0).tick(30)
+      return 30
     },
     // the world alone, a long stretch: the bed's own level
     async bed(b) {
