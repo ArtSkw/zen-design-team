@@ -6,7 +6,7 @@ import { impulse } from './synth'
 // sounds the same in all three.
 //
 //   ui     the controls: wood
-//   toy    the Zeneks: boops, bubbles, a splash on the water, their arrival
+//   toy    the Zeneks: their bubbles, their arrival; a splash on the water
 //   near   the lake at the deck
 //   far    the hills: breeze, birds, gulls, the plane, fish
 //   title  the pen, and the bell as the title lets go

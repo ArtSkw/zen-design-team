@@ -1,5 +1,5 @@
 // The key. Every pitched sound is in one key, the yo scale on D (D E G A B): any notes of it
-// sound well together, so boops, notes and bells never clash however they overlap.
+// sound well together, so notes and bells never clash however they overlap.
 const YO = [0, 2, 5, 7, 9]
 const midi = (deg: number) => 62 + 12 * Math.floor(deg / 5) + YO[((deg % 5) + 5) % 5]
 

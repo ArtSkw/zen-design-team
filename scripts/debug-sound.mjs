@@ -63,7 +63,7 @@ let tapped = false
 for (let y = 0.45; y <= 0.72 && !tapped; y += 0.045)
   for (let x = 0.3; x <= 0.72 && !tapped; x += 0.035) {
     await page.mouse.click(W * x, H * y)
-    tapped = await page.evaluate(() => (window.__sound?.cues ?? []).some(([c]) => c.startsWith('tap:')))
+    tapped = await page.evaluate(() => (window.__sound?.cues ?? []).some(([c]) => c.startsWith('bubble:in:')))
   }
 await page.waitForTimeout(600)
 await cues(`zenek tapped (${tapped ? 'hit' : 'missed'})`)

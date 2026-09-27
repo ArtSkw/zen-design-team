@@ -23,7 +23,6 @@ export type Member = {
   gaze?: 'partner' | 'viewer'   // rest gaze; default: chat with the nearest neighbour
   temperament: { breath: number; blink: number; sway: number }
   seed: number
-  voice?: 'high'                 // the tap's boop sits in the higher range, above every other (owner-directed 2026-09-27: the women of the team)
 }
 
 // Plan coords (x right, y up, z back) → three.js. Yaw ≈ 0.5 faces the home camera.
@@ -37,7 +36,7 @@ const STONE = 0.36 - 0.09
 export const TEAM: Member[] = [
   // ---- designed ------------------------------------------------------------
   {
-    id: 'magda-r', name: 'Magda R.', seed: 11, voice: 'high',
+    id: 'magda-r', name: 'Magda R.', seed: 11,
     // docs/cast/magda-r.png (2026-09-23 redesign) — body circle (633, 670) px, R 388
     parts: [
       { type: 'sculpt', name: 'magda-r-hair', color: '#5f3c2b', clay: { freq: 80, amp: 0.14, sheenColor: '#dcae8e' }, traits: { crown: true, waveSide: 1 } },
@@ -62,8 +61,11 @@ export const TEAM: Member[] = [
   {
     id: 'artur', name: 'Artur', seed: 37,
     parts: [
-      { type: 'sculpt', name: 'artur-beard', color: '#c68653', clay: { freq: 120, amp: 0.18, sheenColor: '#ffd6b0' }, traits: { front: true } },
-      { type: 'sculpt', name: 'artur-moustache', color: '#cd8e5b', clay: { freq: 140, amp: 0.2, sheenColor: '#ffd6b0' } },
+      // the beard a warm brown, smaller — drawn in over the body toward the moustache — and a little
+      // brighter at the top, with the moustache; the moustache less thick (owner-directed 2026-09-28;
+      // was #c68653, full size)
+      { type: 'sculpt', name: 'artur-beard', color: '#9b5b33', clay: { freq: 120, amp: 0.18, sheenColor: '#ffd6b0', top: '#ab6a3f', topY: [-0.5, -0.2] }, traits: { front: true }, shrink: { by: 0.82, toward: [0.02, -0.17, 1] } },
+      { type: 'sculpt', name: 'artur-moustache', color: '#b07040', clay: { freq: 140, amp: 0.2, sheenColor: '#ffd6b0' }, slim: { y: 0.8, out: 0.75 } },
     ],
     // the plate a little longer and wider than drawn (0.6 × 0.36, +0.26), its top kept: the white
     // reaches down under the moustache and the beard's top out to the sideburns (Artur, 2026-09-26)
@@ -75,7 +77,7 @@ export const TEAM: Member[] = [
   // ---- designs pending: plain Zeneks hold the seats ---------------------------
   {
     // docs/cast/magda-j.png — body circle (672, 653) px, R 421 (fitted on the silhouette below the hands)
-    id: 'magda-j', name: 'Magda J.', seed: 41, voice: 'high',
+    id: 'magda-j', name: 'Magda J.', seed: 41,
     parts: [
       { type: 'sculpt', name: 'magda-j-hair', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35] }, traits: { crown: true } },
       // one loose curl out of the hairline onto her forehead (the same clay)
@@ -87,7 +89,7 @@ export const TEAM: Member[] = [
   },
   {
     // docs/cast/aneta.png — the drawn body is a touch tall: read on an ellipse centred (637, 720) px, 408 across, 435 up
-    id: 'aneta', name: 'Aneta', seed: 43, voice: 'high',
+    id: 'aneta', name: 'Aneta', seed: 43,
     parts: [
       { type: 'sculpt', name: 'aneta-hair', color: '#3f2e23', clay: { freq: 105, amp: 0.12, sheenColor: '#dcc3a4', tip: '#7c5e41', tipY: [0.95, 0.15] }, traits: { crown: true } },
       { type: 'shirt', name: 'aneta-shirt' },
@@ -102,7 +104,7 @@ export const TEAM: Member[] = [
     // docs/cast/edyta.png — body circle (655, 650) px, R 390 (the design's face is turned a touch to the right; the build is square on)
     // the storyteller: loose blond waves under a red kerchief with a gold celestial print, bangles on
     // her right paw (the one that waves), a crystal ball on her left (the earrings came off: Artur, 2026-09-27)
-    id: 'edyta', name: 'Edyta', seed: 47, voice: 'high',
+    id: 'edyta', name: 'Edyta', seed: 47,
     parts: [
       { type: 'sculpt', name: 'edyta-hair', color: '#5f4128', clay: { freq: 170, amp: 0.12, sheen: 0.65, sheenColor: '#f6e2bb', roughness: 0.5, tip: '#c39d66', tipY: [0.95, 0.5] }, traits: { crown: true, waveSide: -1, sideWave: true, rigidPaws: true } },
       { type: 'kerchief', name: 'edyta-kerchief', color: '#6f1f28', gold: '#d8a64a' },
@@ -181,7 +183,7 @@ export const TEAM: Member[] = [
     // docs/cast/mirek.png — body circle (627, 630) px, R 384 (fitted on the head's sides and top; the drawn jacket hangs below the sphere)
     id: 'mirek', name: 'Mirek', seed: 73,
     parts: [
-      { type: 'sculpt', name: 'mirek-hair', color: '#43312a', clay: { freq: 70, amp: 0.035, roughness: 0.45, sheen: 0.6, sheenColor: '#a89084' }, traits: { crown: true } },
+      { type: 'sculpt', name: 'mirek-hair', color: '#261b17', clay: { freq: 70, amp: 0.035, roughness: 0.45, sheen: 0.6, sheenColor: '#7a6860' }, traits: { crown: true } }, // darker (owner-directed 2026-09-28; was #43312a)
       // the flight jacket: leather with pocket flaps, a shearling collar, brass zip and snaps, two patches (the sleeves left off: the hands stay bare)
       { type: 'garment', name: 'mirek-jacket', look: 'leather', color: '#45302a' },
       { type: 'garment', name: 'mirek-collar', look: 'fleece', color: '#b8773f' },

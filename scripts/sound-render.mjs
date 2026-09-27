@@ -27,7 +27,6 @@ const scenes = await page.evaluate(async (only) => {
   const syn = await import('/src/sound/synth.ts')
   const { mixer } = await import('/src/sound/mix.ts')
   const { hz } = await import('/src/sound/key.ts')
-  const { TAP_SY, TAP_DUR } = await import('/src/zenek/tap.ts')
   const { mulberry32 } = await import('/src/lib/rng.ts')
   const rec = await import('/src/sound/samples.ts')
   await rec.preload()
@@ -42,12 +41,11 @@ const scenes = await page.evaluate(async (only) => {
       syn.bell(b.ui, hz(5), 3.8, { kind: 'bowl', level: 0.7 })
       return 9
     },
-    // a Zenek tapped: boop and bubble (the line is read in silence); read and drawn back
+    // a Zenek tapped: its bubble's plip, one sound (the line is read in silence); read and drawn back
     async toy(b) {
       let t = 0.3
-      for (const deg of [-3, 0, 4]) {
-        syn.boop(b.toy, hz(deg), t, { curve: TAP_SY, dur: TAP_DUR })
-        syn.plip(b.toy, t + 0.03, { level: 0.9 })
+      for (let i = 0; i < 3; i++) {
+        syn.plip(b.toy, t + 0.01, { level: 0.9 })
         t += 0.9
       }
       syn.swish(b.toy, t, { dur: 0.38, from: 2400, to: 650, q: 1.4, level: 0.05 })

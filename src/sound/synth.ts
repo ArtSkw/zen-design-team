@@ -1,4 +1,4 @@
-import { clamp, kf } from '../lib/anim'
+import { clamp } from '../lib/anim'
 import { mulberry32 } from '../lib/rng'
 
 // The instruments, synthesised. They are stand-ins, drawn in the hand the finished sounds
@@ -8,8 +8,8 @@ import { mulberry32 } from '../lib/rng'
 // renders offline for a look at its waveforms (scripts/sound-render.mjs).
 //
 // The palette: wood (the deck, the controls), water (the lake, the bubbles, a touch on
-// the water), air (the hills, the petals), one glass bell — and the Zeneks, who sound
-// like toys: a soft rubber boop.
+// the water), air (the hills, the petals), a bell (the singing bowl), and the kalimba of
+// the fourteen arriving.
 
 export type Out = { ctx: BaseAudioContext; dest: AudioNode }
 type Rng = () => number
@@ -176,43 +176,6 @@ export function pluck(o: Out, f: number, t: number, { vel = 1, bright = 1, decay
   partial(w, f * 2.005, t, 0.06, 0.002, tau * 0.4)
   if (f * 5.93 < 15000) partial(w, f * 5.93, t, 0.16 * bright, 0.001, 0.045)
   click(w, t, 0.06 * bright, 3800, 1.2, 0.005)
-}
-
-/**
- * The boing, heard: a soft rubber toy squeezed and let go. Its pitch follows the body's
- * height through the same curve the motion plays (src/zenek/tap.ts) — lower as it
- * squashes, higher as it stretches, a wobble as it settles — and it lands with a felt thud.
- */
-export function boop(o: Out, f: number, t: number, { curve, dur, pan = 0, level = 1 }: { curve: [number, number][]; dur: number; pan?: number; level?: number }) {
-  const v = voice(o, 0.34 * level, pan)
-  const w = filter(v, 'lowpass', 2600, 0.6)
-  const n = 64
-  const f1 = new Float32Array(n)
-  const f2 = new Float32Array(n)
-  for (let i = 0; i < n; i++) {
-    const sy = kf(curve, i / (n - 1))
-    f1[i] = f * sy ** 2.2
-    f2[i] = f1[i] * 2
-  }
-  const g = o.ctx.createGain()
-  g.gain.setValueAtTime(0, t)
-  g.gain.linearRampToValueAtTime(1, t + 0.012)
-  g.gain.setValueAtTime(1, t + dur * 0.3)
-  g.gain.setTargetAtTime(0, t + dur * 0.3, dur * 0.16)
-  g.connect(w.dest)
-  for (const [curveF, amp] of [[f1, 1], [f2, 0.2]] as const) {
-    const osc = o.ctx.createOscillator()
-    osc.frequency.setValueCurveAtTime(curveF, t, dur)
-    const a = o.ctx.createGain()
-    a.gain.value = amp
-    osc.connect(a).connect(g)
-    osc.start(t)
-    osc.stop(t + dur * 1.6)
-  }
-  // it lands (the hop comes down a little past halfway)
-  const land = t + dur * 0.56
-  const thud = partial(w, 150, land, 0.35, 0.003, 0.03)
-  thud.frequency.exponentialRampToValueAtTime(90, land + 0.05)
 }
 
 // ---- water ------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { CatmullRomCurve3, CylinderGeometry, Quaternion, Shape, SphereGeometry, TorusGeometry, Vector3, type Material } from 'three'
+import { CatmullRomCurve3, CylinderGeometry, Quaternion, Shape, SphereGeometry, TorusGeometry, Vector3, type BufferGeometry, type Material } from 'three'
 import type { faceOf } from './proportions'
 import { between, normalQuat, onSphere, smoothExtrude, taperedTube } from './geometry'
 import { ghostOf, matte, metal } from './materials'
@@ -20,8 +20,10 @@ import { Bangles, CrystalBall } from './trinkets'
 export type PartConfig =
   | { type: 'face-janek' }
   | { type: 'glasses-round'; color?: string }
-  // a baked sculpt (src/zenek/sculpts/, public/sculpts/<name>.bin), worn in the head frame
-  | { type: 'sculpt'; name: string; color: string; clay?: ClayOpts; traits?: Partial<HeadTraits> }
+  // a baked sculpt (src/zenek/sculpts/, public/sculpts/<name>.bin), worn in the head frame;
+  // `shrink` draws it in over the body toward a point (shrinkOnBody), `slim` makes it less
+  // thick where it rests (slimmer)
+  | { type: 'sculpt'; name: string; color: string; clay?: ClayOpts; traits?: Partial<HeadTraits>; shrink?: { by: number; toward: [number, number, number] }; slim?: { y: number; out: number } }
   // the kit (src/zenek/kit.tsx), head frame
   | { type: 'stubble'; color: string; regions: StubbleRegion[]; roughness?: number }
   | { type: 'skin'; at: [number, number]; size: [number, number]; color: string; opacity: number }
@@ -198,8 +200,86 @@ function GlassesRound({ ctx, color }: { ctx: PartCtx; color: string }) {
 }
 
 // ---- baked sculpts ---------------------------------------------------------------
+const shrunk = new Map<string, BufferGeometry>()
+
+/**
+ * A sculpt made smaller as it is worn: each point turned toward `toward` over the body
+ * (its angle from it × `by`), its distance from the body's centre kept — so it covers less
+ * of the sphere and still sits on it, its thickness and lumps as sculpted, where a plain
+ * scale would sink its sides into the body or lift them off. Lock directions turn with it.
+ */
+function shrinkOnBody(src: BufferGeometry, by: number, toward: [number, number, number]) {
+  const g = src.clone()
+  const c = new Vector3(...toward).normalize()
+  const pos = g.getAttribute('position')
+  const dir = g.getAttribute('dir')
+  const p = new Vector3()
+  const axis = new Vector3()
+  const d = new Vector3()
+  const q = new Quaternion()
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i)
+    const r = p.length()
+    const angle = Math.acos(Math.min(1, Math.max(-1, p.dot(c) / r)))
+    if (angle < 1e-6) continue
+    axis.crossVectors(c, p).normalize()
+    q.setFromAxisAngle(axis, (by - 1) * angle) // back toward c by (1 − by) of the way
+    p.applyQuaternion(q)
+    pos.setXYZ(i, p.x, p.y, p.z)
+    if (dir) {
+      d.fromBufferAttribute(dir, i).applyQuaternion(q)
+      dir.setXYZ(i, d.x, d.y, d.z)
+    }
+  }
+  g.computeVertexNormals()
+  g.computeBoundingSphere()
+  return g
+}
+
+/**
+ * A sculpt made less thick where it rests (a moustache on the face): its height squeezed by
+ * `y` about its middle, and how far it stands off the body by `out` — measured from its own
+ * base (its innermost points), which stays where it rests, so it neither floats nor sinks.
+ */
+function slimmer(src: BufferGeometry, y: number, out: number) {
+  const g = src.clone()
+  const pos = g.getAttribute('position')
+  const p = new Vector3()
+  let mid = 0
+  const radii: number[] = []
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i)
+    mid += p.y
+    radii.push(p.length())
+  }
+  mid /= pos.count
+  const base = radii.sort((a, b) => a - b)[Math.floor(radii.length * 0.02)]
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i)
+    p.y = mid + (p.y - mid) * y
+    const r = p.length()
+    if (r > base) p.multiplyScalar((base + (r - base) * out) / r)
+    pos.setXYZ(i, p.x, p.y, p.z)
+  }
+  g.computeVertexNormals()
+  g.computeBoundingSphere()
+  return g
+}
+
 function SculptPart({ cfg, ctx }: { cfg: Extract<PartConfig, { type: 'sculpt' }>; ctx: PartCtx }) {
-  const g = useSculpt(cfg.name)
+  const baked = useSculpt(cfg.name)
+  const { shrink: s, slim } = cfg
+  const g = useMemo(() => {
+    if (!baked || (!s && !slim)) return baked
+    const key = `${cfg.name}|${s?.by}|${s?.toward}|${slim?.y}|${slim?.out}`
+    let out = shrunk.get(key)
+    if (!out) {
+      out = s ? shrinkOnBody(baked, s.by, s.toward) : baked
+      if (slim) out = slimmer(out, slim.y, slim.out)
+      shrunk.set(key, out)
+    }
+    return out
+  }, [baked, s, slim, cfg.name])
   const mat = clay(cfg.color, cfg.clay)
   if (!g) return null
   return <mesh geometry={g} material={m(mat, ctx.ghost)} scale={ctx.R} raycast={ctx.ghost ? noRaycast : undefined} castShadow />

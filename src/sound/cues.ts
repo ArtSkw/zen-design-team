@@ -1,7 +1,6 @@
-import { ENTRANCE_ORDER, TEAM, byId } from '../cast/team'
+import { ENTRANCE_ORDER } from '../cast/team'
 import { store, type State } from '../lib/store'
 import { clamp } from '../lib/anim'
-import { TAP_DUR, TAP_SY } from '../zenek/tap'
 import { SOUND, bus, duck, ear, note, now, onTurn, play, setSoundOn, whenRunning } from './engine'
 import * as syn from './synth'
 import * as rec from './samples'
@@ -15,66 +14,34 @@ import { PETALS_FALLING } from '../ui/TitleDust'
 // below whatever the visitor sets off (owner-directed 2026-09-27).
 //
 // Each cue plays its recording (src/sound/samples.ts) once one is in, and its synthesised
-// stand-in until then. The Zeneks' boop stays synthesised: it bends with each one's squash
-// and sits on each one's note (owner-directed 2026-09-27: keep their sound).
+// stand-in until then.
 export { hz }
 
 /** A Zenek's own note: its place in the entrance wave, G3 at the back up to D6 — home — for Artur, who arrives last. */
 const noteOf = (id: string) => Math.max(0, ENTRANCE_ORDER.indexOf(id)) - 3
-/**
- * A Zenek's boop, in one of two ranges of the key (owner-directed 2026-09-27): the high
- * voices (team.ts `voice: 'high'`) A4–E5, every other G3–G4 — so each high voice sits
- * above every other, a step apart, and within its range each Zenek keeps a note of its
- * own, spread in entrance order.
- */
-const RANGES = { high: [3, 6], other: [-3, 2] } as const
-const boopOf = (id: string) => {
-  const high = byId(id)?.voice === 'high'
-  const group = TEAM.filter((m) => (m.voice === 'high') === high)
-    .map((m) => m.id)
-    .sort((a, b) => ENTRANCE_ORDER.indexOf(a) - ENTRANCE_ORDER.indexOf(b))
-  const [lo, hi] = RANGES[high ? 'high' : 'other']
-  return lo + Math.round((group.indexOf(id) / Math.max(1, group.length - 1)) * (hi - lo))
-}
 
 // ---- the Zeneks ---------------------------------------------------------------------------
-/** A tap on a Zenek: the boop, following its squash and stretch. */
-function tap(id: string) {
-  play('toy', (o) => {
-    const { pan, dist } = ear.of(id)
-    note(`tap:${id}`)
-    syn.boop(o, hz(boopOf(id)), o.ctx.currentTime + 0.005, { curve: TAP_SY, dur: TAP_DUR, pan, level: near(dist) })
-  })
-}
-
-/** Farther Zeneks sound a little quieter (never much: they are all in the one room). */
-const near = (dist: number) => clamp(24 / dist, 0.7, 1.15)
-
 /**
- * The bubbles, as the store tells them: one pops up with a drop's plip, takes a smaller
- * one for the next line, draws back with a breath of air when read, steps aside for
- * another. The line itself is read in silence (owner-directed 2026-09-27: no tune).
+ * The bubbles, as the store tells them. A tap on a Zenek is one sound, its bubble's drop
+ * (owner-directed 2026-09-28: minimal — the pitched boop and the swish of a bubble stepping
+ * aside are gone); the next line takes the same drop, a little softer. The line itself is
+ * read in silence (2026-09-27); when it has been read the bubble draws back with a breath.
  */
 function bubbles(prev: State, s: State) {
   if (s.active === prev.active && s.said === prev.said) return
   duck(!!s.active)
   const from = prev.active
   const to = s.active
-  if (from && to && from !== to) play('toy', (o) => syn.swish(o, o.ctx.currentTime, { dur: 0.16, from: 1800, to: 900, level: 0.05, pan: ear.of(from).pan }))
-  if (to && to !== from)
+  if (to && (to !== from || s.said !== prev.said)) {
+    const again = to === from
     play('toy', (o) => {
-      note(`bubble:in:${to}`)
-      const t = o.ctx.currentTime + 0.03
+      note(`bubble:${again ? 'next' : 'in'}:${to}`)
+      const t = o.ctx.currentTime + 0.01
       const pan = ear.of(to).pan
-      if (!rec.shot(o, 'plip', t, { pan })) syn.plip(o, t, { level: 0.9, pan })
+      const level = again ? 0.8 : 1
+      if (!rec.shot(o, 'plip', t, { level, pan, rate: 0.98 + Math.random() * 0.04 })) syn.plip(o, t, { level: 0.9 * level, pan })
     })
-  else if (to && s.said !== prev.said)
-    play('toy', (o) => {
-      note(`bubble:next:${to}`)
-      const t = o.ctx.currentTime + 0.02
-      const pan = ear.of(to).pan
-      if (!rec.shot(o, 'plip', t, { level: 0.6, rate: 1.26, pan })) syn.plip(o, t, { from: 1175, to: 1480, dur: 0.04, level: 0.55, pan })
-    })
+  }
   else if (!to && from) {
     // read: the words go, then the bubble draws back into the speaker
     const o = bus('toy')
@@ -301,5 +268,5 @@ if (SOUND) {
 
 const quiet = () => {}
 export const sfx = SOUND
-  ? { tap, arrive, control, splash, pen, dot, flyer, plop, toggle }
-  : { tap: quiet, arrive: quiet, control: quiet, splash: quiet, pen: quiet, dot: quiet, flyer: quiet, plop: quiet, toggle: quiet }
+  ? { arrive, control, splash, pen, dot, flyer, plop, toggle }
+  : { arrive: quiet, control: quiet, splash: quiet, pen: quiet, dot: quiet, flyer: quiet, plop: quiet, toggle: quiet }

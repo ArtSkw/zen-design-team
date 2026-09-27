@@ -1070,8 +1070,10 @@ room; Artur shares the link.
   - Published page: the CSP gains `media-src 'self' data:` (the check's inline silence);
     "Kontynuuj" and its lettering are their own chunk, loaded behind the loader. The sound
     adds ~9 KB gzip to the first chunk; the water tap's occlusion raycast costs ≤ 1.2 ms.
-  - Boop ranges: `voice: 'high'` in `team.ts` (Aneta, Edyta, Magda J., Magda R.) → A4–E5
-    (440–659 Hz); every other G3–G4 (196–392 Hz); spread in entrance order (`boopOf`).
+  - A tap on a Zenek is one sound (2026-09-28, owner-directed): the bubble's plip, the next
+    line's a little softer. The synthesised boop, its per-Zenek notes and the higher range
+    for the women of the team (`voice: 'high'`) were removed, as was the swish of a bubble
+    stepping aside.
   - Levels (peak, dBFS): what the visitor sets off — boop + plip −8, splash −14 to −16,
     control click −19, bowl −18; the world — gulls −28, songbird −27, fish −28, uguisu
     −28, plane −26, lake + breeze −25 (RMS −42). Check with `node scripts/sound-render.mjs`

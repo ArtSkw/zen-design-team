@@ -5,19 +5,24 @@ import { Color, MeshPhysicalMaterial, type Material, type WebGLProgramParameters
 // strand grooves cut in the shader across each lock — using the lock direction baked
 // into every vertex (`dir`), so the strands follow the hair — detail far finer than
 // the mesh carries. Optionally a balayage: the colour shifts to `tip` down the hair (by
-// height in the sculpt, from tipY[0] to tipY[1]) and lighter strands streak along the locks.
+// height in the sculpt, from tipY[0] to tipY[1]) and lighter strands streak along the locks;
+// and, gently, to `top` up it (from topY[0] up to topY[1]): a beard lighter near the moustache.
 
 const cache = new Map<string, Material>()
 
-export type ClayOpts = { freq?: number; amp?: number; sheen?: number; roughness?: number; sheenColor?: string; tip?: string; tipY?: [number, number]; streak?: number }
+export type ClayOpts = { freq?: number; amp?: number; sheen?: number; roughness?: number; sheenColor?: string; tip?: string; tipY?: [number, number]; top?: string; topY?: [number, number]; streak?: number }
 
 export function clay(color: string, o: ClayOpts = {}): Material {
-  const { freq = 160, amp = 0.16, sheen = 0.55, roughness = 0.74, sheenColor = '#ffe2c4', tip, tipY = [0, -1], streak = 0 } = o
-  const key = `${color}|${freq}|${amp}|${sheen}|${roughness}|${sheenColor}|${tip}|${tipY}|${streak}`
-  // the tip colour as a multiplier of the base (white: no balayage)
+  const { freq = 160, amp = 0.16, sheen = 0.55, roughness = 0.74, sheenColor = '#ffe2c4', tip, tipY = [0, -1], top, topY = [0, 1], streak = 0 } = o
+  const key = `${color}|${freq}|${amp}|${sheen}|${roughness}|${sheenColor}|${tip}|${tipY}|${top}|${topY}|${streak}`
+  // the tip and top colours as multipliers of the base (white: no shift)
   const base = new Color(color)
-  const tc = new Color(tip ?? color)
-  const tint = new Color(tc.r / Math.max(1e-4, base.r), tc.g / Math.max(1e-4, base.g), tc.b / Math.max(1e-4, base.b))
+  const over = (c?: string) => {
+    const t = new Color(c ?? color)
+    return new Color(t.r / Math.max(1e-4, base.r), t.g / Math.max(1e-4, base.g), t.b / Math.max(1e-4, base.b))
+  }
+  const tint = over(tip)
+  const lift = over(top)
   const hit = cache.get(key)
   if (hit) return hit
   const m = new MeshPhysicalMaterial({ color: new Color(color), roughness, sheen, sheenColor: new Color(sheenColor), sheenRoughness: 0.55, vertexColors: true })
@@ -28,6 +33,8 @@ export function clay(color: string, o: ClayOpts = {}): Material {
     sh.uniforms.uClayAmp = { value: amp }
     sh.uniforms.uClayTip = { value: tint }
     sh.uniforms.uClayTipY = { value: tipY }
+    sh.uniforms.uClayTop = { value: lift }
+    sh.uniforms.uClayTopY = { value: topY }
     sh.uniforms.uClayStreak = { value: streak }
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec3 dir;\nuniform float uClayFreq;\nvarying float vPhase;\nvarying vec3 vAcrossView;\nvarying float vClayY;')
@@ -41,11 +48,12 @@ export function clay(color: string, o: ClayOpts = {}): Material {
         vClayY = position.y;`,
       )
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uClayAmp;\nuniform vec3 uClayTip;\nuniform vec2 uClayTipY;\nuniform float uClayStreak;\nvarying float vPhase;\nvarying vec3 vAcrossView;\nvarying float vClayY;')
+      .replace('#include <common>', '#include <common>\nuniform float uClayAmp;\nuniform vec3 uClayTip;\nuniform vec2 uClayTipY;\nuniform vec3 uClayTop;\nuniform vec2 uClayTopY;\nuniform float uClayStreak;\nvarying float vPhase;\nvarying vec3 vAcrossView;\nvarying float vClayY;')
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
         diffuseColor.rgb *= mix(vec3(1.0), uClayTip, 1.0 - smoothstep(uClayTipY.y, uClayTipY.x, vClayY));
+        diffuseColor.rgb *= mix(vec3(1.0), uClayTop, smoothstep(uClayTopY.x, uClayTopY.y, vClayY));
         diffuseColor.rgb *= 1.0 + uClayStreak * (0.6 * sin(vPhase * 0.31 + 1.3) + 0.4 * sin(vPhase * 0.117 + 4.0));`,
       )
       .replace(
