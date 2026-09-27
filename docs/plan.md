@@ -1035,9 +1035,53 @@ room; Artur shares the link.
 
 ## v1.1 — candidates (decide after the team has seen v1.0)
 
-- **Ambient sound** — garden birds and faint room tone via Web Audio, unlocked
-  on first tap, one tiny speaker toggle in the frame margin; off by default on
-  mobile.
+- **Sound** — trial built 2026-09-27 (direction A, BRIEF decision 6). Plain Web Audio,
+  no library, no audio files yet (+8 KB gzip in the first chunk):
+  - `src/sound/synth.ts` — the instruments, synthesised stand-ins (kalimba, boop, plip,
+    splash, tick, tok, bells, pen, lake, breeze, birds, gull, plane). Each takes a context, a
+    destination and a time, so it plays live and renders offline.
+  - `src/sound/engine.ts` — the context (made in the first gesture), five buses (`ui`,
+    `toy`, `near`, `far`, `title`) into one shared open-air reverb and a limiter; on/off
+    faded, remembered (`localStorage`), silent with the tab; the mix follows the camera.
+  - `src/sound/cues.ts` — the key (yo scale on D), each Zenek's note (entrance order,
+    G3 → D6), and every cue wired to what the app does.
+  - `src/sound/Ear.tsx` — the camera as listener (pan from screen position, zoom mix).
+  - `?snd=0` turns sound off (screenshots). On by default; the first gesture makes the
+    context, and what that gesture asked to sound plays as it wakes (`play` in engine).
+  - Round 2 (2026-09-27): no entrance tap; no voice tune; one control click (`tick`); the
+    world lowered; a tap on visible water rings it (WaterBlooms' touch rings) and
+    splashes (`Water`: a whole-scene raycast on the tap, so the room and the deck hide
+    the lake behind them); control tooltips in `src/ui/ViewControls.tsx` (450 ms before
+    the first, the next along at once, hidden on press, keyboard focus at once).
+  - Rounds 3–4 (2026-09-27): the loader's check becomes the DS button "Kontynuuj"
+    (`src/ui/Press.tsx`; label outlines from `docs/ds/button-regular.svg` in
+    `src/ui/button-label.ts`), only when needed. It takes over at the ring's measured
+    centre as the mark hides (`.dsl--handed`); opening 1.35 s (gather, check pops, width
+    spring 2.1 Hz ζ 0.66, height 3.2 Hz ζ 0.5, word uncovered through a clip of the pill),
+    closing 0.72 s (word out, fold to a circle, a 6 px drop, sinks; `press: 'done'` at
+    0.45 s starts the title). Frames: `node scripts/press-film.mjs` (dev hook
+    `window.__press.seek(t, 'in' | 'out')`). When it is asked: `soundAllowed()` (engine) starts at boot — sticky user
+    activation, Firefox's `getAutoplayPolicy`, else a tenth of a second of inline silence
+    offered to `Audio.play()` (a blocking browser refuses it quietly); the boot waits at
+    most 150 ms more for the answer, then asks. Not asked when sound is off (remembered)
+    or in automated runs (`?press=1` forces it). Checked by `node scripts/debug-press.mjs`
+    — which only *listens* to the page's dev `console.debug` lines, since Playwright's
+    evaluations count as user gestures.
+  - Published page: the CSP gains `media-src 'self' data:` (the check's inline silence);
+    "Kontynuuj" and its lettering are their own chunk, loaded behind the loader. The sound
+    adds ~9 KB gzip to the first chunk; the water tap's occlusion raycast costs ≤ 1.2 ms.
+  - Boop ranges: `voice: 'high'` in `team.ts` (Aneta, Edyta, Magda J., Magda R.) → A4–E5
+    (440–659 Hz); every other G3–G4 (196–392 Hz); spread in entrance order (`boopOf`).
+  - Levels (peak, dBFS): what the visitor sets off — boop + plip −8, splash −14 to −16,
+    control click −19, bowl −18; the world — gulls −28, songbird −27, fish −28, uguisu
+    −28, plane −26, lake + breeze −25 (RMS −42). Check with `node scripts/sound-render.mjs`
+    then `scripts/sound-look.py` (levels + spectrograms in `shots/sound/`), and the wiring
+    in the running app with `node scripts/debug-sound.mjs`.
+  - Next: record each sound in ElevenLabs (dry, one-shots, loops of 30 s), trim, tune the
+    pitched ones to the key, and swap them in cue by cue.
+  - Fixed on the way: the scene clock restarts when the 3D wakes after the title (R3F's
+    `setFrameloop` zeroes it), which had left the rings on the water waiting forever;
+    they now carry on across the jump.
 - **The back of the postcard** — tap a corner to flip; a handwritten-style
   thank-you note, a stamp, the date. This is where the "love postcard" message
   itself lives; kept out of v1.0 to protect the scene's purity, and the likely

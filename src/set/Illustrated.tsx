@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { ReflectorMaterial, notInWater } from './Reflector'
-import { BackSide, CanvasTexture, ClampToEdgeWrapping, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, Mesh, PlaneGeometry, ShaderMaterial, SRGBColorSpace, Vector3 } from 'three'
+import { BackSide, CanvasTexture, ClampToEdgeWrapping, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, Mesh, PlaneGeometry, Raycaster, ShaderMaterial, SRGBColorSpace, Vector3, type Material, type Object3D } from 'three'
 import { ARC, CENTER, INK, Ink, PAPER, WATER, composition, drawRing, inkFor, makePlate, xOf, type Floater, type Plate, type Ring } from './ink'
 import { DEBUG, LITE } from '../lib/params'
 import { store } from '../lib/store'
 import { mulberry32, range } from '../lib/rng'
 import { skyAttention } from '../lib/sky'
+import { hush } from '../lib/talk'
+import { sfx } from '../sound/cues'
 
 // The drawn world around the deck: a paper sky, a pale water disc ending at a
 // single horizon stroke, and design-system line art on three continuous strips
@@ -55,10 +57,48 @@ export function PaperSky() {
 }
 
 // ---- water: pale, flat, a ghost of the room, ending just inside the near strip ----
+/** Where the visitor touched the water, for WaterBlooms to ring. */
+const touches: { x: number; z: number }[] = []
+const _cast = new Raycaster()
+
+/**
+ * Is the water hidden at this hit — the room, the deck, a Zenek in front of it? The
+ * pointer's own raycast sees only things that answer it, so a tap on the room's wall
+ * reaches the lake behind; this asks the whole scene, once, on a tap.
+ */
+function hidden(e: ThreeEvent<PointerEvent>, water: Mesh, scene: Object3D) {
+  _cast.ray.copy(e.ray)
+  _cast.camera = e.camera
+  for (const h of _cast.intersectObject(scene, true)) {
+    if (h.distance >= e.distance - 0.3) return false
+    const m = h.object as Mesh
+    if (m === water || !m.visible) continue
+    const mat = m.material as Material | Material[] | undefined
+    if (!mat || Array.isArray(mat) || (mat.transparent && !mat.depthWrite)) continue // drawn overlays: ripples, rings, glows
+    return true
+  }
+  return false
+}
+
 export function Water({ radius }: { radius: number }) {
   const water = useRef<Mesh>(null)
+  const scene = useThree((s) => s.scene)
+  const down = useRef<{ x: number; y: number } | null>(null)
+  // a tap on the water (not a drag of the view): a ring where it landed, and a small splash
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    down.current = { x: e.clientX, y: e.clientY }
+  }
+  const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
+    const d = down.current
+    down.current = null
+    if (!d || Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 8 || !water.current) return
+    hush() // a tap off a Zenek closes its bubble, as it always has
+    if (hidden(e, water.current, scene)) return
+    touches.push({ x: e.point.x, z: e.point.z })
+    sfx.splash(e.point.x, e.point.y, e.point.z)
+  }
   return (
-    <mesh ref={water} rotation-x={-Math.PI / 2} position={[CENTER.x, WATER_Y, CENTER.z]} receiveShadow>
+    <mesh ref={water} rotation-x={-Math.PI / 2} position={[CENTER.x, WATER_Y, CENTER.z]} receiveShadow onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
       <circleGeometry args={[radius, 128]} />
       <ReflectorMaterial host={water} exclude={notInWater} blur={[420, 160]} resolution={LITE ? 384 : 768} every={LITE ? 4 : 1} mixBlur={1} mixStrength={0.9} roughness={0.7} depthScale={0} color={WATER} metalness={0} mirror={0.34} />
     </mesh>
@@ -172,6 +212,7 @@ export function DrawnWorld({ bridge = false }: { bridge?: boolean }) {
 // ---- the plane: rare, slow, climbing — as the DS draws it -------------------------
 type Flyer = { id: number; phi: number; y0: number; dir: 1 | -1; speed: number; active: boolean; nextAt: number; r: number; bob: number; climb: number }
 let flyerSeq = 0
+const _p = new Vector3()
 const PLANE_ARC = { from: 168, to: 262 } // the arc a plane crosses, around the home view
 const GULL_ARC = { from: 176, to: 254 }
 
@@ -201,7 +242,7 @@ const drawGulls = (ink: Ink, mirror: boolean) => {
  * Something that crosses the sky now and then. `dir > 0` means increasing φ, which
  * the camera sees as flying to the LEFT — the DS plane's own heading, unmirrored.
  */
-function Crossing({ draw, w, h, r, arc, ys, speed, gap, first, climb, still }: {
+function Crossing({ draw, w, h, r, arc, ys, speed, gap, first, climb, still, sound }: {
   draw: (ink: Ink, mirror: boolean) => void
   w: number; h: number; r: number
   arc: { from: number; to: number }
@@ -211,12 +252,13 @@ function Crossing({ draw, w, h, r, arc, ys, speed, gap, first, climb, still }: {
   first: number
   climb: number
   still: { phi: number; y: number }
+  sound: 'plane' | 'gulls' // what it sounds like as it passes (src/sound/cues.ts)
 }) {
   const plates = usePlates(draw, w, h, r)
   const ref = useRef<Mesh>(null)
   const f = useMemo<Flyer>(() => ({ id: 0, phi: arc.from, y0: ys[0], dir: 1, speed: speed[0], active: false, nextAt: first, r, bob: 0, climb }), [arc.from, ys, speed, first, r, climb])
   const frozen = !DEBUG.motion || store.get().reducedMotion
-  useFrame(({ clock }, rawDt) => {
+  useFrame(({ clock, camera }, rawDt) => {
     const m = ref.current
     if (!m) return
     const t = clock.elapsedTime
@@ -250,12 +292,15 @@ function Crossing({ draw, w, h, r, arc, ys, speed, gap, first, climb, still }: {
       f.nextAt = t + gap[0] + Math.random() * (gap[1] - gap[0])
       m.visible = false
       if (skyAttention.id === f.id) skyAttention.active = false
+      sfx.flyer(sound, f.id, 1, 0)
       return
     }
     m.visible = true
     const y = WATER_Y + f.y0 + u * f.climb + Math.sin(t * 0.9 + f.bob) * 0.16
     m.position.set(...polar(f.phi, r, y))
     m.rotation.y = facing(f.phi)
+    _p.copy(m.position).project(camera)
+    sfx.flyer(sound, f.id, u, Math.max(-1, Math.min(1, _p.x)) * 0.8)
     // worth a glance while it is over the room's side of the sky
     if (u > 0.08 && u < 0.85) {
       skyAttention.active = true
@@ -277,9 +322,9 @@ export function Sky() {
   return (
     <group>
       {/* the plane: seldom, slow, and climbing a little as it goes */}
-      <Crossing draw={drawPlane} w={2.3} h={1.1} r={66} arc={PLANE_ARC} ys={[4.6, 5.8]} speed={[0.024, 0.032]} gap={[38, 80]} first={14} climb={2.6} still={{ phi: 234, y: 6.4 }} />
+      <Crossing sound="plane" draw={drawPlane} w={2.3} h={1.1} r={66} arc={PLANE_ARC} ys={[4.6, 5.8]} speed={[0.024, 0.032]} gap={[38, 80]} first={14} climb={2.6} still={{ phi: 234, y: 6.4 }} />
       {/* a pair of gulls, lower and closer, drifting across without climbing */}
-      <Crossing draw={drawGulls} w={4.2} h={1.6} r={58} arc={GULL_ARC} ys={[4.2, 5.6]} speed={[0.014, 0.02]} gap={[26, 60]} first={6} climb={0.3} still={{ phi: 214, y: 5.9 }} />
+      <Crossing sound="gulls" draw={drawGulls} w={4.2} h={1.6} r={58} arc={GULL_ARC} ys={[4.2, 5.6]} speed={[0.014, 0.02]} gap={[26, 60]} first={6} climb={0.3} still={{ phi: 214, y: 5.9 }} />
     </group>
   )
 }
@@ -408,9 +453,49 @@ export function WaterBlooms({ avoid }: { avoid: { x0: number; x1: number; z0: nu
   )
   useEffect(() => () => blooms.forEach((b) => b.mat.dispose()), [blooms])
   const refs = useRef<(Mesh | null)[]>([])
+  // the visitor's touches ring as a fish's bloom does, a little quicker
+  const rings = useMemo(
+    () =>
+      Array.from({ length: 4 }, () => {
+        const mat = bloomMat.clone()
+        mat.uniforms.uT0.value = -100
+        mat.uniforms.uLife.value = 4.6
+        return mat
+      }),
+    [],
+  )
+  useEffect(() => () => rings.forEach((m) => m.dispose()), [rings])
+  const ringRefs = useRef<(Mesh | null)[]>([])
+  const nextRing = useRef(0)
   const frozen = !DEBUG.motion || store.get().reducedMotion
+  const last = useRef(-1)
   useFrame(({ clock }) => {
-    const t = frozen ? 0 : clock.elapsedTime
+    const now = clock.elapsedTime
+    while (touches.length) {
+      const p = touches.shift()!
+      const k = nextRing.current++ % rings.length
+      const m = ringRefs.current[k]
+      if (!m) continue
+      m.position.x = p.x
+      m.position.z = p.z
+      rings[k].uniforms.uT0.value = now
+    }
+    rings.forEach((m, k) => {
+      m.uniforms.uTime.value = now
+      const mesh = ringRefs.current[k]
+      if (mesh) mesh.visible = now - m.uniforms.uT0.value < m.uniforms.uLife.value // drawn only while it rings
+    })
+    const t = frozen ? 0 : now
+    // the scene clock restarts when the 3D rests behind the title and wakes (R3F's
+    // setFrameloop zeroes it): every ring keeps its place in its life across the jump,
+    // or the water would wait for times that never come again
+    const jump = last.current < 0 ? 0 : t - last.current
+    last.current = t
+    if (Math.abs(jump) > 2)
+      for (const b of blooms) {
+        b.t0 += jump
+        b.mat.uniforms.uT0.value = b.t0
+      }
     blooms.forEach((b, i) => {
       const m = refs.current[i]
       if (!m) return
@@ -431,6 +516,7 @@ export function WaterBlooms({ avoid }: { avoid: { x0: number; x1: number; z0: nu
         b.mat.uniforms.uLife.value = b.life
         m.position.x = x
         m.position.z = z
+        sfx.plop(x, WATER_Y, z, b.t0 - t) // now and then, a fish made it
       }
       b.mat.uniforms.uTime.value = t
     })
@@ -439,6 +525,11 @@ export function WaterBlooms({ avoid }: { avoid: { x0: number; x1: number; z0: nu
     <group>
       {blooms.map((b, i) => (
         <mesh key={i} ref={(el) => (refs.current[i] = el)} material={b.mat} position={[b.x, WATER_Y + 0.01, b.z]} rotation-x={-Math.PI / 2}>
+          <planeGeometry args={[BLOOM_SIZE, BLOOM_SIZE]} />
+        </mesh>
+      ))}
+      {rings.map((mat, i) => (
+        <mesh key={`t${i}`} ref={(el) => (ringRefs.current[i] = el)} material={mat} position={[0, WATER_Y + 0.012, 0]} rotation-x={-Math.PI / 2} visible={false}>
           <planeGeometry args={[BLOOM_SIZE, BLOOM_SIZE]} />
         </mesh>
       ))}

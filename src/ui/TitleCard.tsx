@@ -4,6 +4,7 @@ import { mulberry32 } from '../lib/rng'
 import { clamp, lerp, smoothstep } from '../lib/anim'
 import { GLYPHS } from './title-glyphs'
 import { HALF, PEN, WORD_ENDS } from './title-pen'
+import { sfx } from '../sound/cues'
 
 // The title card, between the loader's check and the room: "Meet ZEN Design Team",
 // written by hand. Artur's type (docs/brand/app-title.svg, split into letters) is
@@ -251,6 +252,32 @@ function perform() {
 }
 
 const PERFORMANCE = perform()
+
+// ---- the pen, heard (src/sound/cues.ts) ------------------------------------------------
+const VMAX = Math.max(...PERFORMANCE.strokes.map((s) => Math.max(...s.speed)))
+/** How fast the pen moves at t, 0..1 of the hand's fastest — 0 while it is in the air. */
+function penSpeed(t: number) {
+  const all = PERFORMANCE.strokes
+  let lo = 0
+  let hi = all.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (all[mid].start <= t) lo = mid
+    else hi = mid - 1
+  }
+  const s = all[lo]
+  if (!s || t < s.start || t > s.end) return 0
+  let a = 0
+  let b = s.n - 1
+  while (a < b) {
+    const mid = (a + b + 1) >> 1
+    if (s.time[mid] <= t) a = mid
+    else b = mid - 1
+  }
+  return s.speed[a] / VMAX
+}
+/** When each dot lands on the paper (it drops for DOT.fall first). */
+const DOTS_LAND = PERFORMANCE.dots.map((d) => d.at + DOT.fall)
 /** How long the title phase lasts, from the card appearing to the room starting to rise. */
 export const TITLE_MS = Math.round(PERFORMANCE.end + HOLD)
 /** When the pen has lifted and the last ink has settled, from the card appearing. */
@@ -501,10 +528,16 @@ function Written({ out }: { out: boolean }) {
     let t = 0
     let last = -1
     let raf = 0
+    let dots = 0
     const tick = (now: number) => {
+      const was = t
       t += last < 0 ? 0 : Math.min(now - last, STEP)
       last = now
       if (!frozen) show(t)
+      if (!frozen) {
+        sfx.pen(t < PERFORMANCE.end ? penSpeed(t) : 0)
+        while (dots < DOTS_LAND.length && DOTS_LAND[dots] <= t) if (DOTS_LAND[dots++] > was) sfx.dot()
+      }
       if (t >= PERFORMANCE.end && !store.get().written) store.set({ written: true })
       // the finished title is redrawn a few frames more (the line is still breathing in)
       if (t < PERFORMANCE.end + 100 && !store.get().dissolve) raf = requestAnimationFrame(tick)

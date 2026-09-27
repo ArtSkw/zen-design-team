@@ -17,6 +17,7 @@ import { ZR } from '../zenek/proportions'
 import { bubbles } from '../ui/Bubble'
 import { nameEl } from '../ui/NameTag'
 import { HOME, LIMITS, view, type Spherical } from './view'
+import { Ear } from '../sound/Ear'
 
 const TONE = { aces: ACESFilmicToneMapping, agx: AgXToneMapping, neutral: NeutralToneMapping, none: NoToneMapping } as const
 const _off = new Vector3()
@@ -262,6 +263,7 @@ export function Scene() {
         </Rise>
         <Projector />
         <Clocks />
+        <Ear />
       </Canvas>
     </div>
   )

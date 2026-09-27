@@ -4,6 +4,7 @@ import { ENTRANCE_ORDER, TEAM, type Member } from './team'
 import { Zenek, useZenekRefs } from '../zenek/Zenek'
 import { headRegistry, useMirror, useZenekMotion } from '../zenek/motion'
 import { say } from '../lib/talk'
+import { sfx } from '../sound/cues'
 import { DEBUG, P } from '../lib/params'
 import { notInWater } from '../set/Reflector'
 
@@ -25,6 +26,7 @@ function Seated({ member, order }: { member: Member; order: number }) {
   }, [member.id, refs.head])
 
   const onTap = () => {
+    sfx.tap(member.id)
     say(member.id)
     motion.tap()
   }

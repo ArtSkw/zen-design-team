@@ -63,6 +63,7 @@ function pen(u: number) {
 export function Loader() {
   const phase = useStore((s) => s.phase)
   const loaded = useStore((s) => s.loaded)
+  const handed = useStore((s) => s.press !== 'idle') // the check became the button (Press)
   const [gone, setGone] = useState(!DEBUG.intro)
   const spinRef = useRef<HTMLDivElement>(null)
   const markRef = useRef<SVGGElement>(null)
@@ -143,7 +144,7 @@ export function Loader() {
   return (
     <div className={`loader${markOut ? ' loader--mark-out' : ''}${out ? ' loader--out' : ''}`} aria-hidden="true">
       <TitleCard />
-      <div className={`dsl${loaded ? ' dsl--done' : ''}`}>
+      <div className={`dsl${loaded ? ' dsl--done' : ''}${handed ? ' dsl--handed' : ''}`}>
         <div ref={spinRef} className="dsl__spin">
           <svg className="dsl__mark" width="60" height="62" viewBox="0 0 60 62" fill="none">
             <g ref={markRef} className="dsl__pop">

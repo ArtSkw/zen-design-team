@@ -10,6 +10,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
+  "media-src 'self' data:", // the sound check's tenth of a second of inline silence (src/sound/engine.ts)
   "connect-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

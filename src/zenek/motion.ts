@@ -12,15 +12,15 @@ import { DURATION, allowed, gesture, offsets, resetOffsets, type GestureKind } f
 import { circleMates, emit, eventsSince, laughOf, roleOf, tickSocial } from './social'
 import { skyAttention } from '../lib/sky'
 import { store } from '../lib/store'
+import { sfx } from '../sound/cues'
 import { DEBUG } from '../lib/params'
 import { mulberry32, range } from '../lib/rng'
 import { clamp, damp, easeOutBack, easeOutCubic, kf } from '../lib/anim'
+import { TAP_DUR, TAP_SY, TAP_Y } from './tap'
 
 const R = ZR
 const STAGGER = 0.07
 const POP = 0.52
-const TAP_SY: [number, number][] = [[0, 1], [0.14, 0.86], [0.34, 1.1], [0.52, 0.96], [0.72, 1.02], [1, 1]]
-const TAP_Y: [number, number][] = [[0, 0], [0.14, -0.03], [0.34, 0.3], [0.56, 0], [0.7, 0.05], [0.84, 0], [1, 0]]
 const _v = new Vector3()
 const _w = new Vector3()
 const _u = new Vector3()
@@ -77,7 +77,7 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
   }, [cfg, member.arms])
 
   const st = useRef({
-    t: 0, blinkAt: cfg.firstBlink, blinkStart: -1, lastBlink: -10, hover: 0, tapAt: -1, yaw: 0, pitch: 0, eyeBase: -1, att: 0,
+    t: 0, arrived: false, blinkAt: cfg.firstBlink, blinkStart: -1, lastBlink: -10, hover: 0, tapAt: -1, yaw: 0, pitch: 0, eyeBase: -1, att: 0,
     // gestures: one at a time, on a human interval, seeded per character
     gest: null as Gest | null,
     nextGestAt: 4 + cfg.rng() * 9,
@@ -128,6 +128,10 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
         root.visible = false
         return
       }
+      if (!s.arrived) {
+        s.arrived = true
+        sfx.arrive(member.id) // each on its own note: the wave comes out as a rising run
+      }
       const u = clamp(local / POP, 0, 1)
       e = rm ? easeOutCubic(u) : easeOutBack(u, 1.15)
     }
@@ -139,7 +143,7 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
     let sy = 1
     let hop = 0
     if (s.tapAt >= 0) {
-      const u = (t - s.tapAt) / 0.48
+      const u = (t - s.tapAt) / TAP_DUR
       if (u >= 1) s.tapAt = -1
       else {
         sy = kf(TAP_SY, u)

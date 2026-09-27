@@ -20,6 +20,8 @@ export type State = {
   hover: string | null
   pointerActiveAt: number   // performance.now() of the last pointer move over the stage
   reducedMotion: boolean
+  soundOn: boolean          // the visitor's sound on/off (src/sound/engine.ts)
+  press: 'idle' | 'waiting' | 'pressed' | 'done' // the loader's check become "Kontynuuj", and pressed (src/ui/Press.tsx)
 }
 
 const state: State = {
@@ -40,6 +42,8 @@ const state: State = {
   hover: null,
   pointerActiveAt: -1e9,
   reducedMotion: false,
+  soundOn: true,
+  press: 'idle',
 }
 
 const listeners = new Set<() => void>()

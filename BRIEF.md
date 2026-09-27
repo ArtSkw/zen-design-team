@@ -223,7 +223,30 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
 4. **Names in bubbles** — recommended yes, so the "which one is me" guessing
    game resolves; confirm at Phase 5.
 5. **Reflection** — keep or kill after the Phase 2 material lab, on evidence.
-6. **Sound** — v1.1, only if the room asks for it.
+6. **Sound** — v1.1. **Direction DECIDED 2026-09-27 (Artur): A, the world real and quiet,
+   the Zeneks toys.** The world is wood, water, air and one glass bell: the lake at the
+   posts, a breeze over the hills, a bird now and then, the gulls and the plane heard as
+   they cross, a fish where a ring blooms. The Zeneks sound like toys: a soft rubber boop
+   that follows the squash of the tap, and a drop's plip as the bubble opens. Everything
+   pitched is in one key (the yo scale on D), so nothing ever clashes; the fourteen arrive
+   as a rising run of their own notes, Artur's the last, home. The camera is the
+   listener. A trial is built with synthesised stand-ins for every sound, each to be
+   replaced with an ElevenLabs recording. No music.
+   **Round 2, owner-directed 2026-09-27:** sound is **on by default** and there is no
+   entrance choice — the speaker in the controls turns it off. **Round 3, same day:** a
+   browser plays nothing before the visitor's first touch, and the intro is meant to be
+   heard, so the finished loader asks for one press. **Round 4, same day:** the ask is the
+   design system's regular button, **"Kontynuuj"** — the loader's checked ring gathers,
+   the check pops away and the ring springs open into the button; pressed, it clicks in
+   wood, folds back into a circle, gathers into a drop of ink and sinks into the page as
+   the pen begins the title. It is not shown when the browser would allow sound anyway
+   (a click during the loader, a permissive browser) or when the visitor has turned sound
+   off before. **Voices (same day):** the women of the team — Aneta, Edyta, Magda J. and
+   Magda R. — boop higher than everyone else; each Zenek still has a note of its own. The controls are **one delicate wooden click**, the same for all; only the
+   sound's own button differs (a knock off, the singing bowl on). The world sits **below
+   whatever the visitor sets off**. The Zeneks read their lines **in silence** — no tune.
+   New: a **tap on the water** rings it where it landed, with a small splash; every
+   control **names itself in a tooltip** (the hover tag's smaller sibling).
 7. **Environment beyond the slab** — DECIDED 2026-09-22 (late): **C, the hybrid — the
    illustrated page.** The first terrace-on-water build (reflective water, sprite mist,
    sphere hills, rectangle petals) was judged "okay, not amazing": lantern light clipped

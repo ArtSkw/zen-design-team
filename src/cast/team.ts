@@ -23,6 +23,7 @@ export type Member = {
   gaze?: 'partner' | 'viewer'   // rest gaze; default: chat with the nearest neighbour
   temperament: { breath: number; blink: number; sway: number }
   seed: number
+  voice?: 'high'                 // the tap's boop sits in the higher range, above every other (owner-directed 2026-09-27: the women of the team)
 }
 
 // Plan coords (x right, y up, z back) → three.js. Yaw ≈ 0.5 faces the home camera.
@@ -36,7 +37,7 @@ const STONE = 0.36 - 0.09
 export const TEAM: Member[] = [
   // ---- designed ------------------------------------------------------------
   {
-    id: 'magda-r', name: 'Magda R.', seed: 11,
+    id: 'magda-r', name: 'Magda R.', seed: 11, voice: 'high',
     // docs/cast/magda-r.png (2026-09-23 redesign) — body circle (633, 670) px, R 388
     parts: [
       { type: 'sculpt', name: 'magda-r-hair', color: '#5f3c2b', clay: { freq: 80, amp: 0.14, sheenColor: '#dcae8e' }, traits: { crown: true, waveSide: 1 } },
@@ -74,7 +75,7 @@ export const TEAM: Member[] = [
   // ---- designs pending: plain Zeneks hold the seats ---------------------------
   {
     // docs/cast/magda-j.png — body circle (672, 653) px, R 421 (fitted on the silhouette below the hands)
-    id: 'magda-j', name: 'Magda J.', seed: 41,
+    id: 'magda-j', name: 'Magda J.', seed: 41, voice: 'high',
     parts: [
       { type: 'sculpt', name: 'magda-j-hair', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35] }, traits: { crown: true } },
       // one loose curl out of the hairline onto her forehead (the same clay)
@@ -86,7 +87,7 @@ export const TEAM: Member[] = [
   },
   {
     // docs/cast/aneta.png — the drawn body is a touch tall: read on an ellipse centred (637, 720) px, 408 across, 435 up
-    id: 'aneta', name: 'Aneta', seed: 43,
+    id: 'aneta', name: 'Aneta', seed: 43, voice: 'high',
     parts: [
       { type: 'sculpt', name: 'aneta-hair', color: '#3f2e23', clay: { freq: 105, amp: 0.12, sheenColor: '#dcc3a4', tip: '#7c5e41', tipY: [0.95, 0.15] }, traits: { crown: true } },
       { type: 'shirt', name: 'aneta-shirt' },
@@ -101,7 +102,7 @@ export const TEAM: Member[] = [
     // docs/cast/edyta.png — body circle (655, 650) px, R 390 (the design's face is turned a touch to the right; the build is square on)
     // the storyteller: loose blond waves under a red kerchief with a gold celestial print, bangles on
     // her right paw (the one that waves), a crystal ball on her left (the earrings came off: Artur, 2026-09-27)
-    id: 'edyta', name: 'Edyta', seed: 47,
+    id: 'edyta', name: 'Edyta', seed: 47, voice: 'high',
     parts: [
       { type: 'sculpt', name: 'edyta-hair', color: '#5f4128', clay: { freq: 170, amp: 0.12, sheen: 0.65, sheenColor: '#f6e2bb', roughness: 0.5, tip: '#c39d66', tipY: [0.95, 0.5] }, traits: { crown: true, waveSide: -1, sideWave: true, rigidPaws: true } },
       { type: 'kerchief', name: 'edyta-kerchief', color: '#6f1f28', gold: '#d8a64a' },

@@ -1,0 +1,278 @@
+import { ENTRANCE_ORDER, TEAM, byId } from '../cast/team'
+import { store, type State } from '../lib/store'
+import { clamp } from '../lib/anim'
+import { TAP_DUR, TAP_SY } from '../zenek/tap'
+import { SOUND, bus, duck, ear, note, now, onTurn, play, setSoundOn, whenRunning } from './engine'
+import * as syn from './synth'
+
+// What the app sounds like, and when (direction A, 2026-09-27: wood, water, air and one
+// bell for the world; the Zeneks sound like toys). Nothing sounds without a reason: every
+// cue answers something the app already does or the visitor's own hand — a tap, a bubble,
+// a pen stroke, a gull crossing, a ring blooming on the water. The world stays a step
+// below whatever the visitor sets off (owner-directed 2026-09-27).
+
+// ---- the key --------------------------------------------------------------------------
+// Every pitched sound is in one key, the yo scale on D (D E G A B): any notes of it sound
+// well together, so boops and chimes never clash however they overlap.
+const YO = [0, 2, 5, 7, 9]
+const midi = (deg: number) => 62 + 12 * Math.floor(deg / 5) + YO[((deg % 5) + 5) % 5]
+export const hz = (deg: number) => 440 * 2 ** ((midi(deg) - 69) / 12)
+
+/** A Zenek's own note: its place in the entrance wave, G3 at the back up to D6 — home — for Artur, who arrives last. */
+const noteOf = (id: string) => Math.max(0, ENTRANCE_ORDER.indexOf(id)) - 3
+/**
+ * A Zenek's boop, in one of two ranges of the key (owner-directed 2026-09-27): the high
+ * voices (team.ts `voice: 'high'`) A4–E5, every other G3–G4 — so each high voice sits
+ * above every other, a step apart, and within its range each Zenek keeps a note of its
+ * own, spread in entrance order.
+ */
+const RANGES = { high: [3, 6], other: [-3, 2] } as const
+const boopOf = (id: string) => {
+  const high = byId(id)?.voice === 'high'
+  const group = TEAM.filter((m) => (m.voice === 'high') === high)
+    .map((m) => m.id)
+    .sort((a, b) => ENTRANCE_ORDER.indexOf(a) - ENTRANCE_ORDER.indexOf(b))
+  const [lo, hi] = RANGES[high ? 'high' : 'other']
+  return lo + Math.round((group.indexOf(id) / Math.max(1, group.length - 1)) * (hi - lo))
+}
+
+// ---- the Zeneks ---------------------------------------------------------------------------
+/** A tap on a Zenek: the boop, following its squash and stretch. */
+function tap(id: string) {
+  play('toy', (o) => {
+    const { pan, dist } = ear.of(id)
+    note(`tap:${id}`)
+    syn.boop(o, hz(boopOf(id)), o.ctx.currentTime + 0.005, { curve: TAP_SY, dur: TAP_DUR, pan, level: near(dist) })
+  })
+}
+
+/** Farther Zeneks sound a little quieter (never much: they are all in the one room). */
+const near = (dist: number) => clamp(24 / dist, 0.7, 1.15)
+
+/**
+ * The bubbles, as the store tells them: one pops up with a drop's plip, takes a smaller
+ * one for the next line, draws back with a breath of air when read, steps aside for
+ * another. The line itself is read in silence (owner-directed 2026-09-27: no tune).
+ */
+function bubbles(prev: State, s: State) {
+  if (s.active === prev.active && s.said === prev.said) return
+  duck(!!s.active)
+  const from = prev.active
+  const to = s.active
+  if (from && to && from !== to) play('toy', (o) => syn.swish(o, o.ctx.currentTime, { dur: 0.16, from: 1800, to: 900, level: 0.05, pan: ear.of(from).pan }))
+  if (to && to !== from)
+    play('toy', (o) => {
+      note(`bubble:in:${to}`)
+      syn.plip(o, o.ctx.currentTime + 0.03, { level: 0.9, pan: ear.of(to).pan })
+    })
+  else if (to && s.said !== prev.said)
+    play('toy', (o) => {
+      note(`bubble:next:${to}`)
+      syn.plip(o, o.ctx.currentTime + 0.02, { from: 1175, to: 1480, dur: 0.04, level: 0.55, pan: ear.of(to).pan })
+    })
+  else if (!to && from) {
+    // read: the words go, then the bubble draws back into the speaker
+    const o = bus('toy')
+    if (!o) return
+    note(`bubble:out:${from}`)
+    syn.swish(o, o.ctx.currentTime + 0.1, { dur: 0.38, from: 2400, to: 650, q: 1.4, level: 0.05, pan: ear.of(from).pan })
+  }
+}
+
+/** A touch on the water: a small splash where it landed. */
+function splash(x: number, y: number, z: number) {
+  play('toy', (o) => {
+    const { pan, dist } = ear.at(x, y, z)
+    note('splash')
+    syn.splash(o, o.ctx.currentTime, { pan, level: clamp(30 / dist, 0.5, 1) })
+  })
+}
+
+/** The fourteen arrive, back rows first: each on its own note, a rising run that comes home on Artur's D. */
+function arrive(id: string) {
+  const o = bus('toy')
+  if (!o) return
+  const { pan } = ear.of(id)
+  const last = ENTRANCE_ORDER.indexOf(id) === ENTRANCE_ORDER.length - 1
+  const t = o.ctx.currentTime
+  note(`arrive:${id}`)
+  const low = clamp((noteOf(id) + 3) / 8, 0.55, 1) // the low notes softer and shorter: a run, not a wash
+  syn.pluck(o, hz(noteOf(id)), t, { vel: last ? 0.75 : 0.55 * low, bright: 0.8, decay: last ? 1.6 : 0.55 * low, pan })
+  if (last) syn.pluck(o, hz(noteOf(id) - 5), t + 0.01, { vel: 0.4, bright: 0.5, decay: 1.8, pan })
+}
+
+// ---- the controls: wood ---------------------------------------------------------------------
+/** Any control but the sound's own: one delicate wooden click, placed where the button is. */
+function control(pan = 0) {
+  play('ui', (o) => {
+    note('control')
+    syn.tick(o, o.ctx.currentTime, { pan })
+  })
+}
+
+// ---- the title --------------------------------------------------------------------------------------
+let quill: syn.Pen | null = null
+
+/** The pen, every frame of the title: `speed` 0..1 of the hand's fastest, 0 in the air. */
+function pen(speed: number) {
+  const o = bus('title')
+  // put down for good once the title lets go (its last frames still report a still pen)
+  if (!o || store.get().dissolve || (!quill && speed <= 0)) return
+  if (!quill) {
+    note('pen')
+    quill = syn.pen(o, o.ctx.currentTime)
+  }
+  quill.set(speed, o.ctx.currentTime)
+}
+function dot() {
+  const o = bus('title')
+  if (!o) return
+  note('dot')
+  syn.dot(o, o.ctx.currentTime)
+}
+/** The written title lets go into petals: the pen is put down, a breath of air, the glass bell. */
+function letGo() {
+  quill?.stop(now())
+  quill = null
+  const o = bus('title')
+  if (!o) return
+  const t = o.ctx.currentTime
+  note('letgo')
+  syn.swish(o, t, { dur: 2.2, from: 420, to: 2600, q: 0.7, level: 0.07, pan: -0.2, panTo: 0.25 })
+  const notes = [10, 12, 13, 11, 14].sort(() => Math.random() - 0.5).slice(0, 3)
+  let at = t + 0.12
+  for (const d of notes) {
+    syn.bell(o, hz(d), at, { kind: 'glass', level: 0.8, pan: Math.random() * 0.6 - 0.3 })
+    at += 0.22 + Math.random() * 0.45
+  }
+}
+
+// ---- the world ------------------------------------------------------------------------------------------
+let world: { beds: syn.Bed[]; timer: number; fadeIn: GainNode[] } | null = null
+let nextBird = 0
+
+/** The lake and the hills come in as the room rises (or with the first touch), over `secs`. */
+function startWorld(secs: number) {
+  if (world || !['intro', 'ready'].includes(store.get().phase)) return
+  const near = bus('near')
+  const far = bus('far')
+  if (!near || !far) return
+  const t = near.ctx.currentTime
+  const fadeIn = [near, far].map((o) => {
+    const g = o.ctx.createGain()
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(1, t + secs)
+    g.connect(o.dest)
+    return g
+  })
+  const lake = syn.lake({ ctx: near.ctx, dest: fadeIn[0] }, t)
+  const breeze = syn.breeze({ ctx: far.ctx, dest: fadeIn[1] }, t)
+  onTurn(lake)
+  note('world')
+  nextBird = t + 7 + Math.random() * 8
+  const tick = () => {
+    const at = now()
+    lake.tick(at + 1.2)
+    breeze.tick(at + 1.2)
+    if (at > nextBird) {
+      bird()
+      nextBird = at + 18 + Math.random() * 32
+    }
+  }
+  tick()
+  world = { beds: [lake, breeze], timer: window.setInterval(tick, 250), fadeIn }
+}
+
+/** A bird on the hills, somewhere across the view: most often a blackbird's kind of phrase, now and then the uguisu. */
+function bird() {
+  const o = bus('far')
+  if (!o) return
+  const pan = Math.random() * 1.5 - 0.75
+  const t = o.ctx.currentTime + 0.05
+  note('bird')
+  if (Math.random() < 0.3) syn.uguisu(o, t, { pan, level: 0.8 })
+  else {
+    const d = syn.songbird(o, t, { pan })
+    // sometimes it sings the phrase again, a little changed
+    if (Math.random() < 0.4) syn.songbird(o, t + d + 1.2 + Math.random() * 1.5, { pan, level: 0.9 })
+  }
+}
+
+type Flyer = { id: number; hum?: syn.Hum; calls: number[] }
+const flyers: Record<'plane' | 'gulls', Flyer | null> = { plane: null, gulls: null }
+
+/**
+ * Something crossing the sky, every frame while it is up (src/set/Illustrated.tsx):
+ * `u` 0..1 along its way, `pan` from where it is on screen. The plane hums faintly all
+ * the way; the gulls call once or twice as they pass.
+ */
+function flyer(kind: 'plane' | 'gulls', id: number, u: number, pan: number) {
+  const o = bus('far')
+  let f = flyers[kind]
+  if (!o || u >= 1) {
+    f?.hum?.stop(now())
+    flyers[kind] = null
+    return
+  }
+  if (!f || f.id !== id) {
+    f?.hum?.stop(now())
+    f = flyers[kind] = { id, calls: kind === 'gulls' ? [0.18 + Math.random() * 0.1, ...(Math.random() < 0.65 ? [0.5 + Math.random() * 0.15] : [])] : [] }
+    note(`flyer:${kind}`)
+    if (kind === 'plane') f.hum = syn.planeHum(o, o.ctx.currentTime)
+  }
+  const t = o.ctx.currentTime
+  if (f.hum) f.hum.set(0.5 * Math.sin(Math.PI * clamp(u, 0, 1)) ** 1.5, pan, t)
+  while (f.calls.length && u >= f.calls[0]) {
+    f.calls.shift()
+    const n = 1 + Math.floor(Math.random() * 2)
+    for (let i = 0; i < n; i++) syn.gull(o, t + i * (0.45 + Math.random() * 0.35), { pan: pan + (Math.random() - 0.5) * 0.15 })
+  }
+}
+
+/** A ring about to bloom on the water: now and then — never often — a fish made it. */
+let lastPlop = -1e9
+function plop(x: number, y: number, z: number, delay: number) {
+  const o = bus('far')
+  if (!o || Math.random() > 0.25 || o.ctx.currentTime - lastPlop < 7) return
+  lastPlop = o.ctx.currentTime
+  const { pan, dist } = ear.at(x, y, z)
+  note('plop')
+  syn.plop(o, o.ctx.currentTime + Math.max(0, delay), { pan, level: clamp(15 / dist, 0.12, 0.45) })
+}
+
+// ---- on and off -------------------------------------------------------------------------------------------
+/** The sound's own control: a low knock as it goes quiet, the singing bowl as it comes back with the world. */
+function toggle() {
+  if (store.get().soundOn) {
+    const o = bus('ui')
+    note('toggle:off')
+    if (o) syn.tok(o, hz(5), o.ctx.currentTime, { level: 0.7 })
+    setSoundOn(false)
+    return
+  }
+  setSoundOn(true)
+  play('ui', (o) => {
+    note('toggle:on')
+    syn.bell(o, hz(5), o.ctx.currentTime + 0.03, { kind: 'bowl', level: 0.7 })
+    startWorld(2.5)
+  })
+}
+
+// ---- wiring ---------------------------------------------------------------------------------------------------
+if (SOUND) {
+  let prev = { ...store.get() }
+  store.subscribe(() => {
+    const s = store.get()
+    bubbles(prev, s)
+    if (s.dissolve && !prev.dissolve) letGo()
+    if (s.phase !== prev.phase && s.phase === 'intro') startWorld(2.6)
+    prev = { ...s }
+  })
+  // the world comes in with the first touch, around that touch's own sound
+  whenRunning(() => startWorld(3))
+}
+
+const quiet = () => {}
+export const sfx = SOUND
+  ? { tap, arrive, control, splash, pen, dot, flyer, plop, toggle }
+  : { tap: quiet, arrive: quiet, control: quiet, splash: quiet, pen: quiet, dot: quiet, flyer: quiet, plop: quiet, toggle: quiet }
