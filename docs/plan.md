@@ -1107,7 +1107,8 @@ room; Artur shares the link.
     `setFrameloop` zeroes it), which had left the rings on the water waiting forever;
     they now carry on across the jump.
 - **Music** — **DECIDED 2026-09-28 (Artur): the breath, played by the recorded shō**
-  (BRIEF decision 6): energy 0.8, presence 0.35, −1 dB, seed 326436, on by default with the
+  (BRIEF decision 6): energy 0.95, presence 0.35, 0 dB (first published at 0.8 and −1 dB;
+  raised, owner-directed, the same day), seed 326436, on by default with the
   sound (`CHOSEN` in `src/sound/cues.ts`; `?music=0` for none). `sho-1…4` published
   (+0.77 MB, 3.38 MB in all). The exploration that led there:
   After (Not Boring) Vibes: composed as it plays, by rules, in the room's key, never

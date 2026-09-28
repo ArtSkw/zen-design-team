@@ -28,7 +28,7 @@ const ABOUT: Record<Mood, { name: string; what: string; after: string }> = {
   breath: {
     name: 'Breath',
     what: 'A chord of reeds, like a shō far off, swells and fades like a slow breath, then rests; it changes one reed at a time. The singing bowl, rarely.',
-    after: 'After the shō of gagaku and kankyō ongaku, Japan’s environmental music. In the room: the shō, Awake, Distant, −1 dB, seed 326436.',
+    after: 'After the shō of gagaku and kankyō ongaku, Japan’s environmental music. In the room: the shō, energy 0.95, Distant, 0 dB, seed 326436.',
   },
   lake: {
     name: 'The lake',

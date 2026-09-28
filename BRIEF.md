@@ -261,7 +261,8 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
    Artur chose **the breath, played by the shō**: a chord of four reeds swells and fades
    like a slow breath, rests, and changes one reed at a time; the singing bowl, far off,
    now and then. Its dials: energy 0.8, presence 0.35, a decibel down, and the take he
-   heard (seed 326436), so every visit opens the same way. It grows out of the arrival's
+   heard (seed 326436), so every visit opens the same way; then, live, a little more
+   (energy 0.95: shorter rests, the bowl more often) and a decibel up (0 dB). It grows out of the arrival's
    last note, sits under the world, hushes while a Zenek speaks, and draws back as the
    camera closes in. It is on with the sound, and off with it.
 7. **Environment beyond the slab** — DECIDED 2026-09-22 (late): **C, the hybrid — the

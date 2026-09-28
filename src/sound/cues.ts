@@ -244,7 +244,7 @@ function plop(x: number, y: number, z: number, delay: number) {
  * opens the same way. It grows out of the arrival's last note (or comes in as the room
  * settles), and is on and off with the sound.
  */
-const CHOSEN = { mood: 'breath', energy: 0.8, presence: 0.35, mlevel: -1, seed: 326436, reed: 'sho' }
+const CHOSEN = { mood: 'breath', energy: 0.95, presence: 0.35, mlevel: 0, seed: 326436, reed: 'sho' } // a touch more and a decibel up, after a day live (owner-directed)
 /**
  * To try another (src/sound/music.ts, music.html): `?music=postcards|felt|breath|lake`, or
  * `?music=0` for none; `energy` and `presence` 0..1, `mlevel` in dB, `seed`, and the
