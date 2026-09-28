@@ -12,7 +12,7 @@ import { inKey } from './key'
 
 /** A take as measured (scripts/sfx-look.py); `level` evens it with its cue's other takes, by ear-weighted loudness (scripts/loudness.py). */
 export type Take = { file: string; seconds: number; peak: number; rms: number; loop: boolean; start: number; end: number; hz?: number; level?: number }
-type Loaded = { take: Take; buf: AudioBuffer }
+type Loaded = { take: Take; buf: AudioBuffer; n: number } // n: its place among the cue's picks
 
 /**
  * Each cue's level as it leaves its voice, before its bus (engine: LEVEL, and the master):
@@ -72,11 +72,11 @@ export function preload() {
     const list = await choose()
     const decoder = new OfflineAudioContext(2, 1, 44100)
     await Promise.all(
-      list.map(async ({ cue, take, url }) => {
+      list.map(async ({ cue, take, url }, n) => {
         try {
           const bytes = await (await fetch(url, { priority: 'low' })).arrayBuffer() // never ahead of the room itself
           const buf = await decoder.decodeAudioData(bytes)
-          loaded.set(cue, [...(loaded.get(cue) ?? []), { take, buf }])
+          loaded.set(cue, [...(loaded.get(cue) ?? []), { take, buf, n }].sort((a, b) => a.n - b.n)) // in the picks' order, however they arrive
         } catch {
           /* this take stays silent: its cue keeps its stand-in */
         }
@@ -120,11 +120,13 @@ function out(o: Out, pan: number) {
 
 /**
  * A one-shot of `cue` at time t: trimmed, at `level` × its cue's level, placed, at `rate`
- * (or tuned to `hz`). Returns how long it sounds, or 0 if the cue has no take yet.
+ * (or tuned to `hz`), or always its `take`-th take (0 = the first picked) where it has one.
+ * Returns how long it sounds, or 0 if the cue has no take yet.
  */
-export function shot(o: Out, cue: Cue, t: number, { level = 1, pan = 0, rate = 1, hz, tuned = false }: { level?: number; pan?: number; rate?: number; hz?: number; tuned?: boolean } = {}) {
+export function shot(o: Out, cue: Cue, t: number, { level = 1, pan = 0, rate = 1, hz, tuned = false, take }: { level?: number; pan?: number; rate?: number; hz?: number; tuned?: boolean; take?: number } = {}) {
   const pickd = hz ? nearest(cue, hz) : null
-  const s = pickd?.s ?? next(cue)
+  const list = loaded.get(cue)
+  const s = pickd?.s ?? (take !== undefined && list?.length ? list[Math.min(take, list.length - 1)] : next(cue))
   if (!s) return 0
   // `tuned`: brought to the note of the key nearest its own pitch (a bell, the bowl)
   const r = (pickd?.rate ?? (tuned && s.take.hz ? inKey(s.take.hz) / s.take.hz : 1)) * rate

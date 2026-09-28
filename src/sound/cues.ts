@@ -85,11 +85,15 @@ function arrive(id: string) {
 }
 
 // ---- the controls: wood ---------------------------------------------------------------------
-/** Any control but the sound's own: one delicate wooden click, placed where the button is. */
-function control(pan = 0) {
+/**
+ * Any control but the sound's own: one delicate wooden click, placed where the button is.
+ * Each button keeps its own take: of a pair (in and out, left and right) the first is the
+ * first take and the second the second; a button alone, the first.
+ */
+function control(pan = 0, take: 0 | 1 = 0) {
   play('ui', (o) => {
     note('control')
-    if (!rec.shot(o, 'click', o.ctx.currentTime, { pan, rate: 0.97 + Math.random() * 0.06, level: 0.9 + Math.random() * 0.2 })) syn.tick(o, o.ctx.currentTime, { pan })
+    if (!rec.shot(o, 'click', o.ctx.currentTime, { pan, take, rate: 0.97 + Math.random() * 0.06, level: 0.9 + Math.random() * 0.2 })) syn.tick(o, o.ctx.currentTime, { pan })
   })
 }
 

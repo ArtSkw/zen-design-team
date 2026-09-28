@@ -7,7 +7,8 @@ import { sfx } from '../sound/cues'
 
 // Bottom-centre cluster: home first, then rotate and zoom, and the sound on/off. Quiet
 // glass pills, no labels; Lucide icons (2 px round strokes, like the loader and the DS
-// line work). Every press but the sound's own is one delicate wooden click (src/sound).
+// line work). Every press but the sound's own is one delicate wooden click (src/sound),
+// each button always its own take: of a pair, the first and the second.
 //
 // Each button names itself in a tooltip: the hover tag's smaller sibling (NameTag), a
 // paper pill that grows from the button. The first waits a moment; moving along the
@@ -120,9 +121,10 @@ function Btn({ label, tip, icon: Icon, onClick, pressed, handlers }: BtnProps) {
 export function ViewControls() {
   const soundOn = useStore((s) => s.soundOn)
   const { tip, handlers } = useTip()
-  const press = (act: () => void) => (el: HTMLElement) => {
+  // of a pair, the second button always sounds the click's second take (src/sound/cues: control)
+  const press = (act: () => void, take: 0 | 1 = 0) => (el: HTMLElement) => {
     act()
-    sfx.control(panOf(el))
+    sfx.control(panOf(el), take)
   }
   return (
     <>
@@ -132,11 +134,11 @@ export function ViewControls() {
         </div>
         <div className="vc__group">
           <Btn label="Obróć w lewo" icon={RotateCcw} handlers={handlers} onClick={press(() => view.rotate(-0.42))} />
-          <Btn label="Obróć w prawo" icon={RotateCw} handlers={handlers} onClick={press(() => view.rotate(0.42))} />
+          <Btn label="Obróć w prawo" icon={RotateCw} handlers={handlers} onClick={press(() => view.rotate(0.42), 1)} />
         </div>
         <div className="vc__group">
           <Btn label="Przybliż" icon={Plus} handlers={handlers} onClick={press(() => view.zoom(0.8))} />
-          <Btn label="Oddal" icon={Minus} handlers={handlers} onClick={press(() => view.zoom(1.25))} />
+          <Btn label="Oddal" icon={Minus} handlers={handlers} onClick={press(() => view.zoom(1.25), 1)} />
         </div>
         {SOUND && (
           <div className="vc__group">
