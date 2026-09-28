@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Music · ZEN Design Team sounds</title>
+    <!-- Development only (the build knows only index.html): the music's moods (src/sound/music.ts), composed as they play, to hear and choose. -->
+    <style>
+      :root { --page: #fdfdfc; --ink: #111214; --soft: #7a756e; --line: rgba(17, 18, 20, 0.08); --green: #22e243; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Nunito Variable', Nunito, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      main { max-width: 980px; margin: 0 auto; padding: 40px 20px 200px; }
+      h1 { font-size: 28px; margin: 0 0 6px; }
+      h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--soft); margin: 32px 0 12px; }
+      p.lede { color: var(--soft); margin: 0 0 20px; max-width: 70ch; line-height: 1.5; }
+      canvas { display: block; width: 100%; height: 220px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+      .moods { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+      .mood { text-align: left; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
+      .mood:hover { border-color: rgba(17, 18, 20, 0.25); background: #fff; }
+      .mood[aria-pressed='true'] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+      .mood__name { font-weight: 800; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+      .mood__state { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--soft); }
+      .mood[aria-pressed='true'] .mood__state { color: var(--ink); }
+      .mood__what { line-height: 1.45; font-size: 14px; }
+      .mood__after { color: var(--soft); font-size: 12px; line-height: 1.4; }
+      .dials { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+      .dial { display: flex; align-items: center; gap: 8px; }
+      .dial > span { font-weight: 800; font-size: 14px; min-width: 64px; }
+      .dial[hidden] { display: none; }
+      .seg { display: inline-flex; background: rgba(17, 18, 20, 0.06); border-radius: 999px; padding: 3px; }
+      .seg button { background: transparent; }
+      .seg button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+      button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 7px 14px; background: rgba(17, 18, 20, 0.06); color: var(--ink); cursor: pointer; }
+      button:hover { background: rgba(17, 18, 20, 0.1); }
+      .seg button:hover { background: rgba(17, 18, 20, 0.08); }
+      .seg button[aria-pressed='true']:hover { background: var(--ink); }
+      button:focus-visible, input:focus-visible, .mood:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+      label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700; font-size: 14px; }
+      input[type='range'] { width: 140px; accent-color: var(--ink); }
+      output { font-variant-numeric: tabular-nums; color: var(--soft); font-size: 13px; min-width: 48px; }
+      .bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(253, 253, 252, 0.94); backdrop-filter: blur(10px); border-top: 1px solid var(--line); }
+      .bar__in { max-width: 980px; margin: 0 auto; padding: 12px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .bar code { flex: 1 1 320px; font-size: 12px; color: var(--soft); overflow-wrap: anywhere; }
+      a.button { text-decoration: none; }
+      .note { color: var(--soft); font-size: 13px; margin-top: 10px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Music</h1>
+      <p class="lede">Four ways the room could have music. None is a track: each is played as it goes, note by note, by a few rules, in the room's own key (the yo scale on D, the key of the arrival's kalimba and the bowl), so it never comes round the same way twice. Like the Vibes app, two dials — how much is played, and how near it sounds. Put the world under it to hear it as the room would. Every note blooms below as a ring on the water. The breath and the lake can also be played by ElevenLabs recordings (Instrument): the same take, by another hand.</p>
+      <canvas id="stage" aria-label="Each note, drawn as a ring on water: left is low, right is high"></canvas>
+      <h2>Moods</h2>
+      <div class="moods" id="moods"></div>
+      <h2>Dials</h2>
+      <div class="dials">
+        <div class="dial"><span>Energy</span><div class="seg" id="energy"></div></div>
+        <div class="dial"><span>Presence</span><div class="seg" id="presence"></div></div>
+        <div class="dial" id="inst-dial" hidden><span>Instrument</span><div class="seg" id="inst"></div></div>
+        <div class="dial"><span>Level</span><input id="level" type="range" min="-12" max="6" step="1" value="0" /><output id="level-out">0 dB</output></div>
+        <label><input id="world" type="checkbox" checked /> The world beneath</label>
+        <label><input id="arrival" type="checkbox" /> Begin with the arrival</label>
+        <button id="again" type="button">Another take</button>
+      </div>
+      <p class="note">The level is set so each mood sits a step below the lake and the breeze (−40 LUFS against −38). In the room, zooming in draws the music back and pulling out opens it, as Presence does here; it hushes while a Zenek speaks.</p>
+    </main>
+    <div class="bar"><div class="bar__in">
+      <code id="pick">Choose a mood</code>
+      <button id="copy" type="button">Copy</button>
+      <a class="button" id="room" href="/"><button type="button">Hear it in the room</button></a>
+      <a class="button" id="room-fast" href="/"><button type="button">…skip the intro</button></a>
+    </div></div>
+    <script type="module" src="/src/sound/music-page.ts"></script>
+  </body>
+</html>

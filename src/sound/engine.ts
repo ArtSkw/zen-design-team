@@ -189,12 +189,22 @@ export function note(cue: string) {
 // ---- the listener: the camera ----------------------------------------------------------
 /**
  * Where a sound sits for the camera: `pan` −1..1 from where it is on screen, `dist` in
- * world units. Set by the scene (src/sound/Ear.tsx); centred until then.
+ * world units, `across` 0..1 left to right on screen. Set by the scene (src/sound/Ear.tsx);
+ * centred until then.
  */
+export type Placed = { pan: number; dist: number; across: number }
+const centred: Placed = { pan: 0, dist: 28, across: 0.5 }
 export const ear = {
-  at: (_x: number, _y: number, _z: number) => ({ pan: 0, dist: 28 }),
-  of: (_id: string) => ({ pan: 0, dist: 28 }),
+  at: (_x: number, _y: number, _z: number): Placed => centred,
+  of: (_id: string): Placed => centred,
 }
+
+/**
+ * The lake's music (src/sound/music.ts): a ring asked of the water `delay` s from now,
+ * somewhere the camera sees it; where it will bloom, or null. Set by the scene
+ * (src/set/Illustrated.tsx: WaterBlooms).
+ */
+export const water = { ring: (_delay: number): [number, number, number] | null => null }
 
 const mix = { close: 0, turn: 0, duck: 0 }
 let applied = { close: NaN, turn: NaN, duck: NaN }
@@ -207,6 +217,9 @@ export const onTurn = (b: { bias(pan: number, at: number): void }) => beds.push(
  * fall back and dull; further, the wind opens. `turn` (radians from home) swings the
  * lake's two sides across. `duck` dips the world while a Zenek speaks.
  */
+/** How close the view is (as `listen` has it): the music follows it too (src/sound/cues.ts). */
+export const closeness = () => mix.close
+
 export function listen(close: number, turn: number) {
   mix.close = close
   mix.turn = turn

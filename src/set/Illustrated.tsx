@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { ReflectorMaterial, notInWater } from './Reflector'
-import { BackSide, CanvasTexture, ClampToEdgeWrapping, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, Mesh, PlaneGeometry, Raycaster, ShaderMaterial, SRGBColorSpace, Vector3, type Material, type Object3D } from 'three'
+import { BackSide, CanvasTexture, ClampToEdgeWrapping, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, Mesh, Plane, PlaneGeometry, Raycaster, ShaderMaterial, SRGBColorSpace, Vector2, Vector3, type Camera, type Material, type Object3D, type Ray } from 'three'
 import { ARC, CENTER, INK, Ink, PAPER, WATER, composition, drawRing, inkFor, makePlate, xOf, type Floater, type Plate, type Ring } from './ink'
 import { DEBUG, LITE } from '../lib/params'
 import { store } from '../lib/store'
@@ -9,6 +9,7 @@ import { mulberry32, range } from '../lib/rng'
 import { skyAttention } from '../lib/sky'
 import { hush } from '../lib/talk'
 import { sfx } from '../sound/cues'
+import { water as waterSong } from '../sound/engine'
 
 // The drawn world around the deck: a paper sky, a pale water disc ending at a
 // single horizon stroke, and design-system line art on three continuous strips
@@ -59,18 +60,25 @@ export function PaperSky() {
 // ---- water: pale, flat, a ghost of the room, ending just inside the near strip ----
 /** Where the visitor touched the water, for WaterBlooms to ring. */
 const touches: { x: number; z: number }[] = []
+/** Where the music touched it (`?music=lake`), and how soon: its rings bloom as its notes sound. */
+const songs: { x: number; z: number; delay: number }[] = []
 const _cast = new Raycaster()
+const _look = new Raycaster()
+const _ndc = new Vector2()
+const _hit = new Vector3()
+const _surface = new Plane(new Vector3(0, 1, 0), -WATER_Y)
 
 /**
  * Is the water hidden at this hit — the room, the deck, a Zenek in front of it? The
  * pointer's own raycast sees only things that answer it, so a tap on the room's wall
- * reaches the lake behind; this asks the whole scene, once, on a tap.
+ * reaches the lake behind; this asks the whole scene, once, on a tap (or once for each
+ * ring the music asks of the lake).
  */
-function hidden(e: ThreeEvent<PointerEvent>, water: Mesh, scene: Object3D) {
-  _cast.ray.copy(e.ray)
-  _cast.camera = e.camera
+function hidden(ray: Ray, camera: Camera, distance: number, water: Mesh | null, scene: Object3D) {
+  _cast.ray.copy(ray)
+  _cast.camera = camera
   for (const h of _cast.intersectObject(scene, true)) {
-    if (h.distance >= e.distance - 0.3) return false
+    if (h.distance >= distance - 0.3) return false
     const m = h.object as Mesh
     if (m === water || !m.visible) continue
     const mat = m.material as Material | Material[] | undefined
@@ -93,7 +101,7 @@ export function Water({ radius }: { radius: number }) {
     down.current = null
     if (!d || Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 8 || !water.current) return
     hush() // a tap off a Zenek closes its bubble, as it always has
-    if (hidden(e, water.current, scene)) return
+    if (hidden(e.ray, e.camera, e.distance, water.current, scene)) return
     touches.push({ x: e.point.x, z: e.point.z })
     sfx.splash(e.point.x, e.point.y, e.point.z)
   }
@@ -467,6 +475,38 @@ export function WaterBlooms({ avoid }: { avoid: { x0: number; x1: number; z0: nu
   useEffect(() => () => rings.forEach((m) => m.dispose()), [rings])
   const ringRefs = useRef<(Mesh | null)[]>([])
   const nextRing = useRef(0)
+  // the music's rings, as slow as the fish's
+  const sung = useMemo(
+    () =>
+      Array.from({ length: 3 }, () => {
+        const mat = bloomMat.clone()
+        mat.uniforms.uT0.value = -100
+        mat.uniforms.uLife.value = 7
+        return mat
+      }),
+    [],
+  )
+  useEffect(() => () => sung.forEach((m) => m.dispose()), [sung])
+  const sungRefs = useRef<(Mesh | null)[]>([])
+  const nextSung = useRef(0)
+  const camera = useThree((s) => s.camera)
+  const scene = useThree((s) => s.scene)
+  useEffect(() => {
+    // a spot on the water the camera sees — not off the frame, not behind the room, the
+    // deck or a Zenek: a few looks at random through the view, the first clear one taken
+    waterSong.ring = (delay) => {
+      for (let i = 0; i < 4; i++) {
+        _ndc.set(range(Math.random, -0.9, 0.9), range(Math.random, -0.7, 0.6))
+        _look.setFromCamera(_ndc, camera)
+        if (!_look.ray.intersectPlane(_surface, _hit) || Math.hypot(_hit.x - CENTER.x, _hit.z - CENTER.z) > 40) continue
+        if (hidden(_look.ray, camera, _look.ray.origin.distanceTo(_hit), null, scene)) continue
+        songs.push({ x: _hit.x, z: _hit.z, delay })
+        return [_hit.x, WATER_Y, _hit.z]
+      }
+      return null
+    }
+    return () => void (waterSong.ring = () => null)
+  }, [camera, scene])
   const frozen = !DEBUG.motion || store.get().reducedMotion
   const last = useRef(-1)
   useFrame(({ clock }) => {
@@ -480,11 +520,22 @@ export function WaterBlooms({ avoid }: { avoid: { x0: number; x1: number; z0: nu
       m.position.z = p.z
       rings[k].uniforms.uT0.value = now
     }
-    rings.forEach((m, k) => {
-      m.uniforms.uTime.value = now
-      const mesh = ringRefs.current[k]
-      if (mesh) mesh.visible = now - m.uniforms.uT0.value < m.uniforms.uLife.value // drawn only while it rings
-    })
+    while (songs.length) {
+      const p = songs.shift()!
+      const k = nextSung.current++ % sung.length
+      const m = sungRefs.current[k]
+      if (!m) continue
+      m.position.x = p.x
+      m.position.z = p.z
+      sung[k].uniforms.uT0.value = now + p.delay
+    }
+    ;[rings, sung].forEach((pool, j) =>
+      pool.forEach((m, k) => {
+        m.uniforms.uTime.value = now
+        const mesh = (j ? sungRefs : ringRefs).current[k]
+        if (mesh) mesh.visible = now - m.uniforms.uT0.value < m.uniforms.uLife.value // drawn only while it rings
+      }),
+    )
     const t = frozen ? 0 : now
     // the scene clock restarts when the 3D rests behind the title and wakes (R3F's
     // setFrameloop zeroes it): every ring keeps its place in its life across the jump,
@@ -530,6 +581,11 @@ export function WaterBlooms({ avoid }: { avoid: { x0: number; x1: number; z0: nu
       ))}
       {rings.map((mat, i) => (
         <mesh key={`t${i}`} ref={(el) => (ringRefs.current[i] = el)} material={mat} position={[0, WATER_Y + 0.012, 0]} rotation-x={-Math.PI / 2} visible={false}>
+          <planeGeometry args={[BLOOM_SIZE, BLOOM_SIZE]} />
+        </mesh>
+      ))}
+      {sung.map((mat, i) => (
+        <mesh key={`s${i}`} ref={(el) => (sungRefs.current[i] = el)} material={mat} position={[0, WATER_Y + 0.011, 0]} rotation-x={-Math.PI / 2} visible={false}>
           <planeGeometry args={[BLOOM_SIZE, BLOOM_SIZE]} />
         </mesh>
       ))}

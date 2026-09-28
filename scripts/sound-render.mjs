@@ -155,6 +155,23 @@ const scenes = await page.evaluate(async (only) => {
       rec.bed(b.far, 'breeze', 0).tick(30)
       return 30
     },
+    // the music's moods (src/sound/music.ts), 90 s each at the room's default dials (the
+    // lake's rings anywhere on the water, as if all of it were in view)
+    ...Object.fromEntries(['postcards', 'felt', 'breath', 'lake'].map((mood) => [`music-${mood}`, async (b) => {
+      const mu = await import('/src/sound/music.ts')
+      const m = mu.music(b.music, mood, 0, { seed: 7, energy: 0.25, presence: 0.35, kit: { kalimba: rec.notes('kalimba'), bowl: rec.notes('bowl') } })
+      m.tick(90)
+      return 92
+    }])),
+    // the recorded variants (raw takes: --takes "sho:1+2+3+4,harmonium:…,glass:…,kalimba-notes:…"),
+    // your favourites' dials: the breath far and awake, the lake awake
+    ...Object.fromEntries([['breath', 'sho'], ['breath', 'harmonium'], ['breath', 'glass'], ['breath', ''], ['lake', 'kalimba-notes'], ['lake', 'kalimba']].map(([mood, cue]) => [`music-${mood}-${cue || 'synth'}`, async (b) => {
+      const mu = await import('/src/sound/music.ts')
+      const kit = mood === 'breath' ? { bowl: rec.notes('bowl'), reed: cue ? rec.notes(cue) : undefined } : { kalimba: rec.notes(cue) }
+      const m = mu.music(b.music, mood, 0, { seed: mood === 'breath' ? 326436 : 243960, energy: 0.8, presence: mood === 'breath' ? 0.75 : 0.35, kit })
+      m.tick(90)
+      return 92
+    }])),
     // the world alone, a long stretch: the bed's own level
     async bed(b) {
       const lake = syn.lake(b.near, 0, rng)

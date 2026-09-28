@@ -254,6 +254,16 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
    water); the one pen take that keeps up with the hand; the i's dot one tap; no bell as
    the title lets go (it meant nothing the page shows); the breath of air comes as the
    petals are seen to fall.
+   **Music, DECIDED 2026-09-28 (Artur), replacing "no music":** after (Not Boring) Vibes,
+   music that is played as it goes, never a track, in the room's key. Of four moods tried
+   (an electric piano's loops, a felt piano, the breath, the lake's rings singing) and three
+   recorded instruments for the breath (shō, harmonium, glass harmonica, all ElevenLabs),
+   Artur chose **the breath, played by the shō**: a chord of four reeds swells and fades
+   like a slow breath, rests, and changes one reed at a time; the singing bowl, far off,
+   now and then. Its dials: energy 0.8, presence 0.35, a decibel down, and the take he
+   heard (seed 326436), so every visit opens the same way. It grows out of the arrival's
+   last note, sits under the world, hushes while a Zenek speaks, and draws back as the
+   camera closes in. It is on with the sound, and off with it.
 7. **Environment beyond the slab** — DECIDED 2026-09-22 (late): **C, the hybrid — the
    illustrated page.** The first terrace-on-water build (reflective water, sprite mist,
    sphere hills, rectangle petals) was judged "okay, not amazing": lantern light clipped

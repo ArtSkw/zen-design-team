@@ -1,11 +1,13 @@
 import { ENTRANCE_ORDER } from '../cast/team'
 import { store, type State } from '../lib/store'
 import { clamp } from '../lib/anim'
-import { SOUND, bus, duck, ear, note, now, onTurn, play, setSoundOn, whenRunning } from './engine'
+import { P } from '../lib/params'
+import { SOUND, bus, closeness, duck, ear, note, now, onTurn, play, setSoundOn, water, whenRunning } from './engine'
 import * as syn from './synth'
 import * as rec from './samples'
 import { hz } from './key'
 import { PETALS_FALLING } from '../ui/TitleDust'
+import type { Music } from './music'
 
 // What the app sounds like, and when (direction A, 2026-09-27: wood, water, air and one
 // bell for the world; the Zeneks sound like toys). Nothing sounds without a reason: every
@@ -30,6 +32,7 @@ const noteOf = (id: string) => Math.max(0, ENTRANCE_ORDER.indexOf(id)) - 3
 function bubbles(prev: State, s: State) {
   if (s.active === prev.active && s.said === prev.said) return
   duck(!!s.active)
+  if (typeof tune === 'object') tune?.set({ hush: !!s.active }, now())
   const from = prev.active
   const to = s.active
   if (to && (to !== from || s.said !== prev.said)) {
@@ -69,6 +72,7 @@ function arrive(id: string) {
   const last = ENTRANCE_ORDER.indexOf(id) === ENTRANCE_ORDER.length - 1
   const t = o.ctx.currentTime
   note(`arrive:${id}`)
+  if (last) startMusic(1.2) // the music grows out of Artur's D
   const low = clamp((noteOf(id) + 3) / 8, 0.55, 1) // the low notes softer and shorter: a run, not a wash
   if (rec.has('kalimba')) {
     // the recorded kalimba, tuned to each one's note: its nearest take, by playback rate
@@ -233,6 +237,67 @@ function plop(x: number, y: number, z: number, delay: number) {
   if (!rec.shot(o, 'fish', at, { pan, level: clamp(30 / dist, 0.3, 1) })) syn.plop(o, at, { pan, level: clamp(15 / dist, 0.12, 0.45) })
 }
 
+// ---- the music -------------------------------------------------------------------------------------------------
+/**
+ * The breath, played by the shō (owner-directed 2026-09-28, chosen by ear from four moods
+ * and three recorded instruments): its dials, and the take Artur heard, so every visit
+ * opens the same way. It grows out of the arrival's last note (or comes in as the room
+ * settles), and is on and off with the sound.
+ */
+const CHOSEN = { mood: 'breath', energy: 0.8, presence: 0.35, mlevel: -1, seed: 326436, reed: 'sho' }
+/**
+ * To try another (src/sound/music.ts, music.html): `?music=postcards|felt|breath|lake`, or
+ * `?music=0` for none; `energy` and `presence` 0..1, `mlevel` in dB, `seed`, and the
+ * recordings it plays — `reed` (the breath's; empty: synthesised) and `kalimba` (the
+ * lake's) — with `?take=` for raw ones.
+ */
+const asked = P.str('music', CHOSEN.mood)
+const MUSIC = SOUND && asked !== '0' ? asked : ''
+let tune: Music | 'coming' | null = null
+
+function startMusic(delay: number) {
+  if (!MUSIC || tune) return
+  const o = bus('music')
+  if (!o) return
+  tune = 'coming'
+  void Promise.all([import('./music'), rec.preload()]).then(([m]) => {
+    if (!m.isMood(MUSIC)) return console.warn(`?music=${MUSIC}: one of ${m.MOODS.join(', ')}`)
+    const level = o.ctx.createGain()
+    level.gain.value = 10 ** (P.num('mlevel', CHOSEN.mlevel) / 20)
+    level.connect(o.dest)
+    const presence = P.num('presence', CHOSEN.presence)
+    const seed = P.num('seed', CHOSEN.seed)
+    const t = o.ctx.currentTime + delay
+    const reed = P.str('reed', CHOSEN.reed)
+    const kit = { kalimba: rec.notes(P.str('kalimba', 'kalimba')), bowl: rec.notes('bowl'), reed: reed ? rec.notes(reed) : undefined }
+    const tn = m.music({ ctx: o.ctx, dest: level }, MUSIC, t, { seed, energy: P.num('energy', CHOSEN.energy), presence, kit, water: lake })
+    tune = tn
+    note(`music:${MUSIC}:${seed}:${MUSIC === 'breath' ? `${reed || 'synth'}×${kit.reed?.length ?? 0}` : `${P.str('kalimba', 'kalimba')}×${kit.kalimba.length}`}`)
+    tn.set({ hush: !!store.get().active }, t)
+    let was = NaN
+    const tick = () => {
+      tn.tick(now() + 1.2)
+      // like the vibes app's pinch: close in, and the music draws back for the room;
+      // pull out, and it opens (the lake's notes are the room's own: they stay put)
+      const c = closeness()
+      if (MUSIC === 'lake' || Math.abs(c - was) < 0.02) return
+      was = c
+      tn.set({ presence: clamp(presence + 0.35 * Math.max(0, c) - 0.2 * Math.max(0, -c), 0, 1) }, now())
+    }
+    tick()
+    window.setInterval(tick, 250)
+  })
+}
+
+/** The lake mood: the music touches the water where it is seen, and sings where the ring blooms. */
+function lake(delay: number) {
+  const p = water.ring(delay)
+  if (!p) return null
+  note('music:ring')
+  const { pan, dist, across } = ear.at(...p)
+  return { across, depth: clamp((dist - 15) / 35, 0, 1), pan }
+}
+
 // ---- on and off -------------------------------------------------------------------------------------------
 /** The sound's own control: a low knock as it goes quiet, the singing bowl as it comes back with the world. */
 function toggle() {
@@ -260,10 +325,14 @@ if (SOUND) {
     bubbles(prev, s)
     if (s.dissolve && !prev.dissolve) letGo()
     if (s.phase !== prev.phase && s.phase === 'intro') startWorld(2.6)
+    if (s.phase !== prev.phase && s.phase === 'ready') startMusic(0.6) // no arrival heard (skipped, or sound came later)
     prev = { ...s }
   })
   // the world comes in with the first touch, around that touch's own sound
-  whenRunning(() => startWorld(3))
+  whenRunning(() => {
+    startWorld(3)
+    if (store.get().phase === 'ready') startMusic(1.5)
+  })
 }
 
 const quiet = () => {}

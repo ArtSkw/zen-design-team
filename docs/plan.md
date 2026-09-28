@@ -1106,6 +1106,42 @@ room; Artur shares the link.
   - Fixed on the way: the scene clock restarts when the 3D wakes after the title (R3F's
     `setFrameloop` zeroes it), which had left the rings on the water waiting forever;
     they now carry on across the jump.
+- **Music** — **DECIDED 2026-09-28 (Artur): the breath, played by the recorded shō**
+  (BRIEF decision 6): energy 0.8, presence 0.35, −1 dB, seed 326436, on by default with the
+  sound (`CHOSEN` in `src/sound/cues.ts`; `?music=0` for none). `sho-1…4` published
+  (+0.77 MB, 3.38 MB in all). The exploration that led there:
+  After (Not Boring) Vibes: composed as it plays, by rules, in the room's key, never
+  twice the same. Four moods in `src/sound/music.ts` — *postcards* (FM electric piano,
+  five phrases on loops of their own length: Eno's method, Yoshimura's sound), *felt*
+  (felt piano, a chord at a time: D G Em A Bm), *breath* (shō-like reed clusters that
+  swell, rest and change one reed at a time; the recorded bowl, rarely), *lake* (the
+  music asks the water for a ring where the camera sees it — `water.ring` in engine,
+  WaterBlooms' `sung` pool, the tap's occlusion test — and the ring sings a recorded
+  kalimba note: across is pitch, distance is softness). Two dials as in Vibes: energy
+  and presence (tone, hall, level). All synthesised but the kalimba and the bowl.
+  - Hear them: `music.html` (dev), through the room's mix with the world beneath and
+    an arrival run to start from; in the room `?music=<mood>&energy=&presence=&mlevel=&seed=`
+    (no parameter, no music; the module is its own 4 KB chunk, loaded only then). It
+    starts 1.2 s after the arrival's last D, has its own bus (`music`, own long hall,
+    a touch of the shared air), hushes −6 dB and thins while a Zenek speaks, and
+    zooming in draws it back (presence +0.35), pulling out opens it.
+  - Levels: each mood at −40 LUFS at the defaults (energy 0.25, presence 0.35), a step
+    under the lake + breeze (−38) — `TRIM` in music.ts, from `node scripts/sound-render.mjs
+    --only music-postcards,…` and `scripts/loudness.py`. Wiring: `node scripts/debug-music.mjs`.
+  - Artur's favourites (2026-09-28), before the choice: the lake at energy 0.8 / presence 0.35, the breath at
+    0.8 / 0.75. Round 2, recordings for both (ElevenLabs, 1,450 credits): prompts may now
+    ask for `notes` (`{note}` → "the note A4 (440 Hz)"), a take per note. `kalimba-notes`
+    (A3 D4 G4 B4 E5 ×2): D4, G4, B4 true; A3 came back as A4, E5 as F4 or B4 — the model
+    will not go low or high, so the ends are still reached by rate (±5 semitones). Held,
+    looped 10 s notes (D4 G4 B4 E5) for the breath: `harmonium` all four true and steady
+    (±3 c), `sho` two of four (one a B♭, retuned), `glass` near-pure tones, one with 2.5 s
+    of silence first. A recorded reed is held by crossfaded stretches of its take (seams
+    and silences never heard) under the breath's own swell and fade, levelled by RMS; it
+    draws from the seed as the synthesised one does, so a seed plays the same music on
+    any instrument. Levels evened by ear-weighted loudness (per-take `level` in
+    `sound-raw/index.json`, kept by sfx-look): harmonium −1.8 dB, kalimba-notes −3.3 dB.
+    In the room: `&reed=harmonium` / `&kalimba=kalimba-notes` (+ `&take=…` while raw);
+    `music.html` has an Instrument dial and opens on its address's dials and seed.
 - **The back of the postcard** — tap a corner to flip; a handwritten-style
   thank-you note, a stamp, the date. This is where the "love postcard" message
   itself lives; kept out of v1.0 to protect the scene's purity, and the likely

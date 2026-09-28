@@ -88,6 +88,10 @@ export function preload() {
 
 export const has = (cue: Cue) => loaded.has(cue)
 
+/** A cue's takes as notes to play at any pitch (the music: src/sound/music.ts), each brought to a peak of 1 (and its loudness known, for held notes). */
+export const notes = (cue: string) =>
+  (loaded.get(cue) ?? []).filter((s) => s.take.hz).map(({ take, buf }) => ({ buf, hz: take.hz!, gain: (take.level ?? 1) / Math.max(1e-4, take.peak), start: take.start, end: take.end, rms: take.rms / (take.level ?? 1) }))
+
 /** The cue's takes in turn, so a sound heard twice is two takes where there are two. */
 function next(cue: Cue): Loaded | null {
   const list = loaded.get(cue)

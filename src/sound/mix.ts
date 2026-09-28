@@ -10,10 +10,11 @@ import { impulse } from './synth'
 //   near   the lake at the deck
 //   far    the hills: breeze, birds, gulls, the plane, fish
 //   title  the pen, and the bell as the title lets go
-export type BusName = 'ui' | 'toy' | 'near' | 'far' | 'title'
+//   music  the music, when there is any (src/sound/music.ts: its own hall; a touch of the air)
+export type BusName = 'ui' | 'toy' | 'near' | 'far' | 'title' | 'music'
 
-export const LEVEL: Record<BusName, number> = { ui: 0.4, toy: 0.5, near: 0.5, far: 0.55, title: 0.7 }
-const SEND: Record<BusName, number> = { ui: 0.05, toy: 0.12, near: 0.1, far: 0.42, title: 0.16 }
+export const LEVEL: Record<BusName, number> = { ui: 0.4, toy: 0.5, near: 0.5, far: 0.55, title: 0.7, music: 0.5 }
+const SEND: Record<BusName, number> = { ui: 0.05, toy: 0.12, near: 0.1, far: 0.42, title: 0.16, music: 0.06 }
 /** The mix: every bus through its tone into the master and the shared space, then the limiter. Offline too (scripts/sound-render.mjs). */
 export function mixer(c: BaseAudioContext) {
   const limiter = c.createDynamicsCompressor()

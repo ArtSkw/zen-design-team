@@ -6,6 +6,8 @@
 //   node scripts/sfx.mjs --dry                 what would be generated, and its cost
 //   node scripts/sfx.mjs [--only lake,click]   generate (stops before going over --cap)
 //   node scripts/sfx.mjs --only click --more 2 two more takes of a cue
+// A cue with `notes` asks for each of them in turn (its prompt's {note}): take n is the
+// note notes[(n − 1) % notes.length], `takes` times round.
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs'
 
 const argv = process.argv.slice(2)
@@ -15,6 +17,18 @@ const only = arg('only', '').split(',').filter(Boolean)
 const more = Number(arg('more', '0'))
 const cap = Number(arg('cap', '4000')) // credits this run may spend at most
 const CREDITS_PER_SECOND = 10 // measured on this plan (character-cost of a 0.5 s take: 5)
+const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+/** "A4" → "the note A4 (440 Hz)": the name and the frequency, for the model to aim at. */
+const noteText = (n) => {
+  const [, name, oct] = n.match(/^([A-G]#?)(-?\d)$/)
+  const f = 440 * 2 ** ((NAMES.indexOf(name) + 12 * (Number(oct) + 1) - 69) / 12)
+  return `the note ${n} (${Math.round(f)} Hz)`
+}
+/** Take n's prompt, and its note if the cue has notes. */
+const prompt = (c, n) => {
+  const note = c.notes?.[(n - 1) % c.notes.length]
+  return { text: note ? c.prompt.replaceAll('{note}', noteText(note)) : c.prompt, note }
+}
 
 const book = JSON.parse(readFileSync('docs/sound/prompts.json', 'utf8'))
 const key = readFileSync('.env.local', 'utf8').match(/^\s*ELEVENLABS_API_KEY\s*=\s*["']?([^"'\s]+)/m)?.[1]
@@ -26,7 +40,7 @@ for (const [cue, c] of Object.entries(book.cues)) {
   if (only.length && !only.includes(cue)) continue
   const have = (n) => existsSync(`sound-raw/${cue}/${cue}-${n}.mp3`)
   let n = 1
-  let want = c.takes
+  let want = c.takes * (c.notes?.length ?? 1)
   if (more) {
     while (have(n)) n++
     want = n - 1 + more
@@ -44,7 +58,8 @@ const before = await used()
 let spent = 0
 
 async function take({ cue, n, c }) {
-  const body = { text: c.prompt, duration_seconds: c.seconds, prompt_influence: c.influence, model_id: 'eleven_text_to_sound_v2', ...(c.loop ? { loop: true } : {}) }
+  const { text, note } = prompt(c, n)
+  const body = { text, duration_seconds: c.seconds, prompt_influence: c.influence, model_id: 'eleven_text_to_sound_v2', ...(c.loop ? { loop: true } : {}) }
   for (let attempt = 1; attempt <= 3; attempt++) {
     const r = await fetch(`https://api.elevenlabs.io/v1/sound-generation?output_format=${book.format}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (r.ok) {
@@ -53,8 +68,8 @@ async function take({ cue, n, c }) {
       writeFileSync(`sound-raw/${cue}/${cue}-${n}.mp3`, buf)
       const cost = Number(r.headers.get('character-cost') ?? c.seconds * CREDITS_PER_SECOND)
       spent += cost
-      appendFileSync('sound-raw/log.jsonl', JSON.stringify({ at: new Date().toISOString(), cue, n, cost, bytes: buf.length, version: book.version, ...body }) + '\n')
-      console.log(`  ${cue}-${n}  ${c.seconds}s  ${cost} credits`)
+      appendFileSync('sound-raw/log.jsonl', JSON.stringify({ at: new Date().toISOString(), cue, n, cost, bytes: buf.length, version: book.version, ...(note ? { note } : {}), ...body }) + '\n')
+      console.log(`  ${cue}-${n}${note ? ` (${note})` : ''}  ${c.seconds}s  ${cost} credits`)
       return
     }
     const why = (await r.text()).slice(0, 200)

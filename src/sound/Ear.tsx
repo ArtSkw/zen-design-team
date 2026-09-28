@@ -20,12 +20,12 @@ export function Ear() {
       const dist = _v.distanceTo(camera.position)
       _v.project(camera)
       const x0 = _v.z > 1 ? -_v.x : _v.x // behind the camera: the far side
-      return { pan: clamp(x0, -1, 1) * 0.75, dist }
+      return { pan: clamp(x0, -1, 1) * 0.75, dist, across: clamp((x0 + 1) / 2, 0, 1) }
     }
     ear.at = at
     ear.of = (id) => {
       const h = headRegistry.get(id)
-      if (!h) return { pan: 0, dist: 28 }
+      if (!h) return { pan: 0, dist: 28, across: 0.5 }
       _w.setFromMatrixPosition(h.matrixWorld)
       return at(_w.x, _w.y, _w.z)
     }
