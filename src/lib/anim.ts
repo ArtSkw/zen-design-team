@@ -62,3 +62,21 @@ export function keyed(keys: [number, number][]) {
 // Exponential damping toward a target (frame-rate independent).
 export const damp = (cur: number, target: number, lambda: number, dt: number) =>
   lerp(cur, target, 1 - Math.exp(-lambda * dt))
+
+/** A value that carries its own velocity (see `spring`). */
+export type Spring = { x: number; v: number }
+
+/**
+ * A critically damped spring toward `target`, stepped exactly (frame-rate independent). Unlike
+ * `damp`, it never leaps into motion: a new target changes its acceleration, not its speed, so
+ * it sets off gently, carries on without a kink when the target moves mid-way, and settles
+ * without overshoot. `omega` sets its pace: 90 % of a step in about 3.9 / omega seconds.
+ */
+export function spring(s: Spring, target: number, omega: number, dt: number) {
+  const d = s.x - target
+  const k = (s.v + omega * d) * dt
+  const e = Math.exp(-omega * dt)
+  s.x = target + (d + k) * e
+  s.v = (s.v - omega * k) * e
+  return s.x
+}

@@ -39,7 +39,8 @@ export const TEAM: Member[] = [
     id: 'magda-r', name: 'Magda R.', seed: 11,
     // docs/cast/magda-r.png (2026-09-23 redesign) — body circle (633, 670) px, R 388
     parts: [
-      { type: 'sculpt', name: 'magda-r-hair', color: '#5f3c2b', clay: { freq: 80, amp: 0.14, sheenColor: '#dcae8e' }, traits: { crown: true, waveSide: 1 } },
+      // the ponytail swings a little behind her as she turns (clay swing: from the scrunchie down, behind the head)
+      { type: 'sculpt', name: 'magda-r-hair', color: '#5f3c2b', clay: { freq: 80, amp: 0.14, sheenColor: '#dcae8e', swing: { from: 0.7, to: -0.4, back: true } }, traits: { crown: true, waveSide: 1 } },
       { type: 'sculpt', name: 'magda-r-tie', color: '#161617', clay: { freq: 60, amp: 0.05, sheen: 0.2, roughness: 0.5 } },
       { type: 'glasses-round', color: '#c99a5c' },
     ],
@@ -81,7 +82,7 @@ export const TEAM: Member[] = [
     parts: [
       { type: 'sculpt', name: 'magda-j-hair', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35] }, traits: { crown: true } },
       // one loose curl out of the hairline onto her forehead (the same clay)
-      { type: 'sculpt', name: 'magda-j-curl', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35] } },
+      { type: 'sculpt', name: 'magda-j-curl', color: '#41190e', clay: { freq: 160, amp: 0.18, sheen: 0.75, sheenColor: '#e8906a', roughness: 0.5, tip: '#6d2d1b', tipY: [0.95, -0.35], swing: { from: 0.8, to: 0.6 } } }, // and it bobs
       { type: 'airpods' },
     ],
     face: { plate: { a: 0.683, b: 0.438, y: 0.307 }, eye: { dx: 0.173, y: 0.072, rx: 0.087, ry: 0.11 } },
@@ -106,7 +107,7 @@ export const TEAM: Member[] = [
     // her right paw (the one that waves), a crystal ball on her left (the earrings came off: Artur, 2026-09-27)
     id: 'edyta', name: 'Edyta', seed: 47,
     parts: [
-      { type: 'sculpt', name: 'edyta-hair', color: '#5f4128', clay: { freq: 170, amp: 0.12, sheen: 0.65, sheenColor: '#f6e2bb', roughness: 0.5, tip: '#c39d66', tipY: [0.95, 0.5] }, traits: { crown: true, waveSide: -1, sideWave: true, rigidPaws: true } },
+      { type: 'sculpt', name: 'edyta-hair', color: '#5f4128', clay: { freq: 170, amp: 0.12, sheen: 0.65, sheenColor: '#f6e2bb', roughness: 0.5, tip: '#c39d66', tipY: [0.95, 0.5], swing: { from: 0.35, to: -0.7 } }, traits: { crown: true, waveSide: -1, sideWave: true, rigidPaws: true } }, // the long waves sway a little as she turns (the tips, near her paws, half as much)
       { type: 'kerchief', name: 'edyta-kerchief', color: '#6f1f28', gold: '#d8a64a' },
       { type: 'bangles', hand: 'l' },
       { type: 'crystal-ball', hand: 'r' },

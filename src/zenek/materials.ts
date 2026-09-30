@@ -15,6 +15,33 @@ export const BODY = new MeshPhysicalMaterial({
 export const BODY_AO = BODY.clone()
 BODY_AO.vertexColors = true
 
+/**
+ * A rim of light from behind and above (2026-09-29): in the crowd, black bodies merged into one
+ * another (Mirek into Krystian, Artur into Mateusz N.). A faint cool edge where the body turns
+ * away from the viewer and toward the light behind it — the third light of any character set —
+ * lifts each silhouette off whoever sits behind it. Only the bodies and paws wear it.
+ */
+function withRim(m: MeshPhysicalMaterial) {
+  m.onBeforeCompile = (sh: WebGLProgramParametersWithUniforms) => {
+    sh.uniforms.uRim = { value: [0.13, 0.14, 0.16] } // linear: a cool grey, faint
+    sh.uniforms.uRimDir = { value: [-0.42, 0.72, -0.55] } // toward the light, in view space: above, behind, a little left
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRim;\nuniform vec3 uRimDir;')
+      .replace(
+        '#include <opaque_fragment>',
+        `{
+          float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+          float edge = 1.0 - facing;
+          outgoingLight += uRim * edge * edge * smoothstep(-0.15, 0.65, dot(normal, normalize(uRimDir)));
+        }
+        #include <opaque_fragment>`,
+      )
+  }
+  m.customProgramCacheKey = () => `body-rim-${m.vertexColors ? 'ao' : 'plain'}`
+}
+withRim(BODY)
+withRim(BODY_AO)
+
 // Glossy black beads.
 export const EYE_MAT = new MeshPhysicalMaterial({ color: '#0e0f10', roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 })
 

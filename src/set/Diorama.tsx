@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Mesh } from 'three'
+import { useFrame, useThree } from '@react-three/fiber'
+import type { Mesh, PerspectiveCamera } from 'three'
 import { ReflectorMaterial } from './Reflector'
 import { LanternGlow, LightPool } from './Environment'
+import { DRAWN_LAYER } from './Illustrated'
 import {
   BoxGeometry,
   CanvasTexture,
@@ -10,18 +12,47 @@ import {
   ExtrudeGeometry,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  PlaneGeometry,
+  ShaderMaterial,
   Shape,
   ShapeGeometry,
   SphereGeometry,
   Vector3,
 } from 'three'
 import { SET, P } from './dims'
-import { LITE } from '../lib/params'
+import { DEBUG, LITE } from '../lib/params'
 import { LOGO_ASPECT, gravelTexture, logoTexture, plankTexture, posterTexture } from './textures'
 import { taperedTube } from '../zenek/geometry'
 import { leafGeometry, padGeometry, pillowGeometry } from './props'
 import { mulberry32, range } from '../lib/rng'
 import { store } from '../lib/store'
+import { wind } from '../lib/wind'
+
+/**
+ * The cushions as cloth (2026-09-29): half under a Zenek, a flat saturated green read as a neon
+ * slab. A fabric's sheen at its edges, the piping sewn round its seam, and a fine weave — faded
+ * wherever it would be finer than a pixel, so it never shimmers from across the room.
+ */
+function cloth(m: MeshPhysicalMaterial) {
+  m.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vCloth;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCloth = position;')
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vCloth;').replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+      {
+        float seam = 1.0 - smoothstep(0.004, 0.011, abs(vCloth.y - 0.002)); // the piping, where top meets bottom
+        vec2 q = vCloth.xz * 180.0; // threads ~3.5 mm apart
+        float fw = max(fwidth(q.x), fwidth(q.y));
+        float weave = 0.5 + 0.25 * (sin(q.x) * sin(q.y * 0.5 + 1.0) + sin(q.y) * sin(q.x * 0.5));
+        diffuseColor.rgb *= (1.0 - 0.3 * seam) * (1.0 - 0.1 * weave * (1.0 - smoothstep(0.6, 1.4, fw)));
+      }`,
+    )
+  }
+  m.customProgramCacheKey = () => 'cloth'
+  return m
+}
 
 // ---- materials (one family for the whole set) -------------------------------
 const M = {
@@ -37,7 +68,8 @@ const M = {
   blackGloss: new MeshStandardMaterial({ color: '#141516', roughness: 0.3 }),
   paper: new MeshStandardMaterial({ color: '#f5f0e5', emissive: '#f6eedd', emissiveIntensity: 0.22, roughness: 1 }),
   glass: new MeshPhysicalMaterial({ color: '#dfe9ee', transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0, reflectivity: 0.6, clearcoat: 1, clearcoatRoughness: 0.05, side: DoubleSide, depthWrite: false }),
-  green: new MeshStandardMaterial({ color: '#22e243', roughness: 0.8 }),
+  // the ZEN green, as cloth (2026-09-29): see `cloth` below
+  green: cloth(new MeshPhysicalMaterial({ color: '#22e243', roughness: 0.9, sheen: 1, sheenColor: '#c8ffd2', sheenRoughness: 0.42 })),
   leaf: new MeshStandardMaterial({ color: '#2a6630', roughness: 0.46, side: DoubleSide }),
   leaf2: new MeshStandardMaterial({ color: '#347a3a', roughness: 0.5, side: DoubleSide }),
   needles: new MeshStandardMaterial({ color: '#3f6f37', roughness: 0.92 }),
@@ -236,6 +268,59 @@ function FloorCushions() {
   )
 }
 
+// ---- the tea's steam: one ink line, drawn up from the spout and lifting away -------------------
+// The look-closer detail (2026-09-29): a single stroke in the DS hand, written from the spout
+// upward, swaying as it rises, and gone from the bottom up — then, a few seconds later, again. It
+// is always ~1.8 px wide on screen (the DS line), so it is a hair at the home view and a line when
+// the camera comes close; only the viewer's camera draws it (DRAWN_LAYER), never a mirror.
+const STEAM = { cycle: 7.5, write: 1.1, hold: 1.4, lift: 1.5, h: 0.34, px: 1.8 }
+const steamMat = new ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  uniforms: { uTime: { value: 0 }, uPxWorld: { value: 0.01 }, uInk: { value: new Vector3(0.133, 0.133, 0.133) } },
+  vertexShader: `
+    uniform float uTime; uniform float uPxWorld;
+    varying float vS; varying float vAcross;
+    void main() {
+      float s = uv.y; // 0 at the spout, 1 at the top
+      float ph = uTime * 0.9;
+      // the centre line rises and sways, leaning a little as it goes, curling at the top
+      vec3 c = vec3(0.045 * s * sin(s * 4.4 - ph) + 0.05 * s * s, s * ${STEAM.h.toFixed(2)}, 0.03 * s * cos(s * 3.3 - ph));
+      vec4 mv = modelViewMatrix * vec4(c, 1.0);
+      mv.x += (uv.x * 2.0 - 1.0) * 0.5 * ${STEAM.px.toFixed(1)} * uPxWorld * -mv.z; // its width in screen px, whatever the distance
+      gl_Position = projectionMatrix * mv;
+      vS = s;
+      vAcross = uv.x * 2.0 - 1.0;
+    }`,
+  fragmentShader: `
+    uniform float uTime; uniform vec3 uInk;
+    varying float vS; varying float vAcross;
+    void main() {
+      float t = mod(uTime, ${STEAM.cycle.toFixed(1)});
+      float written = clamp(t / ${STEAM.write.toFixed(1)}, 0.0, 1.0);
+      float lifted = clamp((t - ${(STEAM.write + STEAM.hold).toFixed(1)}) / ${STEAM.lift.toFixed(1)}, 0.0, 1.0);
+      float a = 1.0 - smoothstep(written - 0.08, written, vS); // written from the spout up
+      a *= smoothstep(lifted - 0.02, lifted + 0.18, vS); // gone from the bottom up
+      a *= smoothstep(0.0, 0.12, vS) * (1.0 - smoothstep(0.82, 1.0, vS)); // soft at both ends
+      a *= 1.0 - smoothstep(0.35, 1.0, abs(vAcross)); // the line's soft edge
+      a *= 0.62;
+      if (a < 0.004) discard;
+      gl_FragColor = vec4(uInk, a);
+    }`,
+})
+const steamGeo = new PlaneGeometry(1, 1, 1, 28)
+
+function Steam({ at }: { at: [number, number, number] }) {
+  const mesh = useRef<Mesh>(null)
+  const size = useThree((s) => s.size)
+  useEffect(() => void mesh.current?.layers.set(DRAWN_LAYER), [])
+  useFrame(({ clock, camera }) => {
+    steamMat.uniforms.uTime.value = DEBUG.motion && !store.get().reducedMotion ? clock.elapsedTime : STEAM.write + 0.5
+    steamMat.uniforms.uPxWorld.value = (2 * Math.tan(((camera as PerspectiveCamera).fov * Math.PI) / 360)) / size.height
+  })
+  return <mesh ref={mesh} geometry={steamGeo} material={steamMat} position={at} frustumCulled={false} />
+}
+
 function SideTable() {
   const { table } = SET
   return (
@@ -261,6 +346,8 @@ function SideTable() {
         <mesh material={M.cup} position={[0, 0.17, 0]}>
           <torusGeometry args={[0.1, 0.009, 8, 24, Math.PI]} />
         </mesh>
+        {/* the tea is hot: its steam, from the spout's tip */}
+        <Steam at={[0.197, 0.17, 0]} />
       </group>
     </group>
   )
@@ -283,6 +370,18 @@ function Plant() {
       }
     })
   }, [])
+  // a gust through the open room (src/lib/wind.ts): the leaves tremble, each on its own beat, the
+  // long outer ones most; still again when it has passed
+  const blades = useRef<(Mesh | null)[]>([])
+  const [wx, , wz] = P(plant.x, 0, plant.z)
+  useFrame(({ clock }) => {
+    const g = wind.at(wx, wz)
+    if (g < 0.001 && !blades.current[0]?.rotation.x) return
+    const t = clock.elapsedTime
+    blades.current.forEach((b, i) => {
+      if (b) b.rotation.x = g * (0.035 + 0.05 * Math.sin(t * (7.5 + i * 0.6) + i * 1.9)) * (leaves[i].out > 0.05 ? 1 : 0.5)
+    })
+  })
   return (
     <group position={P(plant.x, 0, plant.z)}>
       <mesh material={M.blackGloss} position={[0, plant.potH / 2, 0]} castShadow receiveShadow>
@@ -294,7 +393,7 @@ function Plant() {
       <group position={[0, plant.potH - 0.02, 0]}>
         {leaves.map((l, i) => (
           <group key={i} rotation-y={l.yaw}>
-            <mesh geometry={l.geo} material={l.alt ? M.leaf2 : M.leaf} position={[0, 0, l.out]} castShadow />
+            <mesh ref={(el) => void (blades.current[i] = el)} geometry={l.geo} material={l.alt ? M.leaf2 : M.leaf} position={[0, 0, l.out]} castShadow />
           </group>
         ))}
       </group>

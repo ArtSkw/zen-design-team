@@ -294,7 +294,7 @@ export type Ring = { id: string; r: number; h: number; below: number; tone: numb
  * floater moves toward larger φ inside its `lane` [from, to] (degrees), fading out at
  * the lane's end and back in at its start — clouds keep to their own stretch of sky.
  */
-export type Floater = { id: string; kind: 'sun' | 'cloud'; phi: number; r: number; y: number; w: number; h: number; drift?: number; lane?: [number, number]; draw: (ink: Ink) => void }
+export type Floater = { id: string; kind: 'sun' | 'cloud' | 'tree'; phi: number; r: number; y: number; w: number; h: number; drift?: number; lane?: [number, number]; draw: (ink: Ink) => void }
 
 const NEAR = 1.0
 const MID = 0.7
@@ -349,26 +349,45 @@ const treesOn = (hill: Hill, trees: [number, number, boolean?][], t: number) => 
   for (const [dx, h, small] of trees) ink.tree(x + hill.x + dx, hillY(hill, dx) - 0.04, h, t, small)
 }
 
+/**
+ * Trees on a near hill that lean when a gust passes (src/lib/wind.ts): each is planted as its own
+ * plate just in front of its strip, at the same place, instead of being drawn into it (Illustrated:
+ * TreeMesh) — its paper body hides the hill line behind it as the strip's drawing order did.
+ */
+const standOn = (r: number, phi: number, hill: Hill, trees: [number, number, boolean?][], t: number, out: Floater[]) => {
+  for (const [dx, h, small] of trees) {
+    const [x0, y0, x1, y1] = (small ? DS.treeSmall : DS.treeBig).crop
+    const x = xOf(phi, r) + hill.x + dx
+    out.push({ id: `tree${out.length}`, kind: 'tree', phi: ARC.to - x / (r * D2R), r: r - 0.06, y: hillY(hill, dx) - 0.04, w: ((h * (x1 - x0)) / (y1 - y0)) * 1.12, h: h * 1.06, draw: (ink) => ink.tree(0, 0, h, t, small) })
+  }
+}
+
 const CITY_PHI = 165 // the far city and the Palace; seen when the orbit turns right of home
 
-export function composition(opts: { bridge?: boolean } = {}): { rings: Ring[]; floaters: Floater[] } {
+export function composition(opts: { bridge?: boolean } = {}): { rings: Ring[]; floaters: Floater[]; trees: Floater[] } {
   const n1: Hill[] = [{ x: -9, w: 28, h: 3.6 }, { x: 12, w: 22, h: 4.6 }]
   const n3: Hill[] = [{ x: -12, w: 24, h: 3.4 }, { x: 6, w: 30, h: 5.2 }]
   const n4: Hill[] = [{ x: -14, w: 26, h: 4 }, { x: 8, w: 30, h: 5.5 }]
   const n5: Hill[] = [{ x: -8, w: 30, h: 4.6 }, { x: 12, w: 20, h: 2.8 }]
   const n6: Hill[] = [{ x: -10, w: 28, h: 3.6 }, { x: 10, w: 24, h: 4.4 }]
   const island: Hill = { x: 0, w: 24, h: 1.7 }
+  // the near hills' trees stand on their own, to lean in the wind (standOn)
+  const trees: Floater[] = []
+  standOn(47, 72, n1[1], [[3.5, 2.6]], NEAR, trees)
+  standOn(47, 160, n3[1], [[-4, 1.6, true], [-1.5, 2.8]], NEAR, trees)
+  standOn(47, 228, n4[1], [[-7, 2.9], [-4, 1.7, true]], NEAR, trees)
+  standOn(47, 268, n5[0], [[6, 2.4]], NEAR, trees)
   const near: Ring = {
     id: 'near', r: 47, h: 9.6, below: 3, tone: NEAR, horizon: true, // tall enough for a tree on the tallest hill
     motifs: [
-      { phi: 72, hills: n1, front: treesOn(n1[1], [[3.5, 2.6]], NEAR) },
+      { phi: 72, hills: n1 },
       // the ZenPlanSmart gate on the crest, answering the torii across the water
       { phi: 120, hills: [{ x: -10, w: 26, h: 4.2 }, { x: 9, w: 22, h: 3 }], front: (ink, x) => ink.motif(DS.gate, x - 10, 4.2 - 0.05, 5.4, NEAR) },
-      { phi: 160, hills: n3, front: treesOn(n3[1], [[-4, 1.6, true], [-1.5, 2.8]], NEAR) },
+      { phi: 160, hills: n3 },
       // the torii on its own low island, its two round trees as drawn
       { phi: 196, hills: [island], front: (ink, x) => ink.motif(DS.torii, x, 1.62, 7.4, NEAR) },
-      { phi: 228, hills: n4, front: treesOn(n4[1], [[-7, 2.9], [-4, 1.7, true]], NEAR) },
-      { phi: 268, hills: n5, front: treesOn(n5[0], [[6, 2.4]], NEAR) },
+      { phi: 228, hills: n4 },
+      { phi: 268, hills: n5 },
       { phi: 305, hills: n6 },
       { phi: 347, hills: [{ x: -12, w: 24, h: 3.2 }, { x: 8, w: 30, h: 4.8 }] },
     ],
@@ -437,5 +456,5 @@ export function composition(opts: { bridge?: boolean } = {}): { rings: Ring[]; f
     cloud('c3', DS.cloudSmall, [302, 332], 312, 95, 6.0, 11, 0.14, true),
     cloud('c5', DS.cloud, [334, 372], 346, 98, 6.4, 16, 0.11, true),
   ]
-  return { rings: [far, mid, near], floaters }
+  return { rings: [far, mid, near], floaters, trees }
 }

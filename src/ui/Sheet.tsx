@@ -30,7 +30,7 @@ function drawSheet(canvas: HTMLCanvasElement, opts: { bridge: boolean }) {
     { from: ARC.from, to: ARC.to, top: 60, horizonY: H * 0.36, waterTo: H * 0.42 },
     { from: 175, to: 255, top: H * 0.44, horizonY: H * 0.9, waterTo: H },
   ]
-  const { rings, floaters } = composition({ bridge: opts.bridge })
+  const { rings, floaters, trees } = composition({ bridge: opts.bridge })
   for (const band of bands) {
     const arcRad = (band.to - band.from) * (Math.PI / 180)
     const xPx = (phi: number) => ((band.to - phi) / (band.to - band.from)) * W
@@ -42,7 +42,7 @@ function drawSheet(canvas: HTMLCanvasElement, opts: { bridge: boolean }) {
     // water: the pale disc, seen as a band under the horizon
     ctx.fillStyle = WATER
     ctx.fillRect(0, band.horizonY, W, band.waterTo - band.horizonY)
-    const all = [...rings.map((r) => ({ r: r.r, draw: (ink: Ink) => drawRing(r, ink), y: 0, phi: null as number | null })), ...floaters.map((f) => ({ r: f.r, draw: f.draw, y: f.y, phi: f.phi as number | null }))].sort((a, b) => b.r - a.r)
+    const all = [...rings.map((r) => ({ r: r.r, draw: (ink: Ink) => drawRing(r, ink), y: 0, phi: null as number | null })), ...[...floaters, ...trees].map((f) => ({ r: f.r, draw: f.draw, y: f.y, phi: f.phi as number | null }))].sort((a, b) => b.r - a.r)
     for (const item of all) {
       const s = scaleOf(item.r)
       ctx.save()

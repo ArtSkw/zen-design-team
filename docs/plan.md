@@ -669,6 +669,146 @@
 > letting go: ~245 → ~110 ms (`DUST_REST` 120 → 30 ms in TitleDust; the petals themselves
 > untouched). Handoff still pixel-identical.
 >
+> **Round 40 (2026-09-29/30) — the motion audit, built in five steps (Artur: "let's do it in that
+> order"), uncommitted for his review in the browser.** The audit's finding: the motion was tuned at
+> lab scale — at 1600×900 a front-row Zenek is ~118 px across, so breath moved 2–3 px, the talking
+> hands 5–14, saccades < 1; frozen side by side only wave and stretch read — and the world had effects
+> without causes (a breeze with nothing moving, a fish's plop with no fish, rings from nothing).
+> (1) *Characters* (`src/zenek/motion.ts`, `gestures.ts`, `social.ts`; `spring` in `src/lib/anim.ts`).
+> Body turns are a critically damped spring (`TURN_W` 5.4, 7.6 with the floor; was `damp` λ 3.2/4.5,
+> which leapt to full speed in a frame) — measured max Δv 0.07–0.5 rad/s a frame (was ~λ·Δ ≈ 2–3).
+> Open staging: `open()` follows a turn exactly to `OPEN_K` 0.38 rad and eases it toward `OPEN` 0.64
+> (never clipped: a hard cap froze Aneta and Edyta, whose circles sit far to one side — every look
+> they had landed past it; a small `drift` after it keeps a body at the cap alive); a look-around's
+> own yaw eases the same way; the eyes carry the rest — the eyes group now *turns* about the body's
+> centre (slides over the face, never off it), `EYE_GAIN` 0.17 R/rad to `EYE_MAX` 0.11 R. Probe: faces
+> 34–40° from the viewer at most over 30 s of idle (was: backs of heads). Talking: `talk` is a speech
+> bounce (`BOUNCE` 4.5 %, `SYLLABLES` 2.9/s, in `PHRASE` 1.9 s phrases with rests, seeded per Zenek)
+> with sparse emphasis beats (half the phrases; outward and lower for `front`/`collar`; a jointed arm
+> bends its elbow); `laugh` is three decaying hops (0.11/0.07/0.04 R, squashed on landing, stretched
+> in the air); `Offsets.hop` lifts the body (never under reduced motion); a gesture's stretch now keeps
+> the body's volume. The greeting (`greetRoom`, `GREET` step 75 ms / hold 2.3 s): as the last Zenek
+> lands, every face turns to the viewer in a ripple from the host (`GREET_RANK`), Artur, Łukasz P.,
+> Kamil and Janek wave, the rest say `hello` (a small lift and nod); the circles' talk waits for it,
+> each resuming a beat apart; 1.25 s in, the host says his first line — "Dziękuję Wam za wszystko!" —
+> unless the visitor has tapped someone (`?host=0` none; `?greet=1` with `?intro=0` replays it).
+> Camera curiosity: a camera closer than 7–10 units (seeded) earns a look at the viewer after
+> 0.3–1.2 s, for 2.5–4.5 s, re-armed when it leaves. Control presses move the camera on a spring
+> (`CAM_W` 7; the intro's dolly keeps its damp). Hand clearance (`check-hands --turn`) against the
+> committed gestures: unchanged or better, but for Mirek's collar (−0.033 vs −0.031, garment contact).
+> (2) *Phone* (`OrbitRig` in `src/scene/Scene.tsx`): portrait (aspect < 0.85) homes at el 23° (landscape
+> keeps 16°), starts on the host's side (bias computed from the camera basis so Artur sits ≤ half-way
+> to the edge — pitfall: the controls keep their own copy of `target`, taken as they render: copy
+> into `ref.current.target`), and in place of the ±1° sway surveys the room — a sideways pan (target and
+> camera together, along the view's right) reaching until the farthest teammate is as well inside,
+> there and back over `SURVEY_T` 44 s, after the greeting and 8 s untouched, easing in over 2 s,
+> stopped by a touch. The home button now brings the orbit's centre back too (`goal.home`).
+> (3) *Water* (`src/set/Illustrated.tsx`, `src/sound/cues.ts`). Ripples: broken DS arcs (heavy near
+> the viewer, light behind, open at the sides; `cameraPosition` in the shader) born by a swell that
+> rolls along the terrace (`SWELL`: period 7 s, 8 units/s, heading (0.97, −0.24)) — a ring and an echo
+> per piling as it passes, then calm. Reflection `?refl=drawn|cut|blur` (default drawn): the drawn
+> world leaves the water's blurred mirror (`notInWater`), and `DrawnReflection` finds the ring strips
+> along the mirrored view ray (analytic ray–cylinder, their own textures at mip 2.2, near over mid
+> over far) and draws their ink as woodblock strokes: 6 px bands each sampling its middle row, drawn
+> out sideways (a max over ±3.5 px), shimmering ±2 px, thresholded (a stroke or nothing), broken now
+> and then. Marks on the water live on `DRAWN_LAYER` (2): only the viewer's camera draws them, never a
+> reflection pass or a raycast. The koi: a bloom reborn in view (on the frame, not hidden: the tap's
+> `hidden()` test), at most every `FISH_GAP` 11 s at `FISH_CHANCE` 0.3, gets a DS-ink tail that rises,
+> flicks and dives as its ring is born; `plop` no longer rolls its own dice — every plop has its fish.
+> Dev: `window.__fish()` sends one to a visible spot.
+> (4) *Wind and pen.* `src/lib/wind.ts`: one gust clock (first 24–38 s after ready, then every
+> 45–90 s; `?gust=s` first gust at s; `?wind=0` none): a front sweeps along `DIR` (0.83, −0.56) at
+> 11 units/s from −48 to 80; `wind.at(x, z)` rises 1.4 s, holds 1.8, falls 3.2. It drives catspaws
+> (the DS hatch, screen-locked, in drifting noise patches behind the front; drawn only during a gust),
+> the near hills' six trees (now `standOn` plates in front of their strip — `composition()` returns
+> `trees`; the layer sheet draws them — sheared by a vertex bend, 0.13·g + flutter), the room's plant
+> (leaves tremble), the clouds (drift × 1 + 2.5 g), one Zenek's `squint` (lids via `Offsets.lid`,
+> folded under the blink) and the breeze bed's `swell` (× 1 + 0.7 g, both recorded and synthesised;
+> no new sound). The tap: its line comes `TAP_LINE_MS` (163 ms, the boing's stretch) after the tap
+> (`sayAfter`; store `pending` hides the name tag at once — it used to ghost through the bubble); the
+> keyboard path is unchanged. `?bubble=ink`: the bubble drawn by the title's hand — a 2 px ink outline
+> written on by WAAPI (200 ms, then the tail's two strokes 70 ms), flat paper, no shadow; the name tag
+> in the same ink. Default stays the approved paper bubble.
+> (5) *Details.* Teapot steam (`Steam` in `Diorama.tsx`): one ink line written up from the spout,
+> swaying, lifted away from the bottom, every 7.5 s — a view-space ribbon held at 1.8 px on screen,
+> `DRAWN_LAYER`. Hanging hair lags turns (`ClayOpts.swing` {from, to, back}; `swingOf`): a bend about
+> the body's axis in the shared clay program, driven by an underdamped spring per Zenek (`HAIR_W` 9,
+> `HAIR_Z` 0.3) — Magda R.'s ponytail (peak 0.13 rad), Magda J.'s curl (0.11), Edyta's waves (0.07).
+> The gulls beat their wings: five baked pair-frames (a stroke flattened, then turned down about its
+> body: path transformed, pen untouched), flap-flap-glide, a step apart. The plane writes a contrail
+> (72 points, 6 s, a double-sided band aged in the shader from a per-point birth time: its buffers
+> change only as points are laid). Pointer parallax on fine pointers (±0.8° round, ±0.45° up/down,
+> held while dragging; landscape only). A rim light on the bodies and paws (fresnel² toward a light
+> above-behind, cool grey 0.13 linear). Fuji's flank a light grey (tone 0.38; `?fuji=hatch` the DS
+> hatch — the cap is lost). Cushions as cloth (sheen, piping, a weave faded below a pixel). The deck's
+> top opens where the slab stands (an alpha map, the margins equal all round), so the room rises
+> through it instead of standing on the planks for the first ~0.6 s. Checks: `probe-nan` 0 flagged
+> pixels in 20 frames with a gust (real GPU); reduced motion (desktop and phone) loads clean; CPU×6
+> phone 58–60 fps, worst frame 17–33 ms, ~750 draws a frame; JS +11 KB gz (first chunk 97.9 → 99.0,
+> Scene 210.8 → 220.3). Design-check hooks (dev only): `window.__zenek` (each Zenek's live pose),
+> `window.__fish()`, `?sway=0` (the camera holds still for motion measurements).
+>
+> **Round 41 (2026-09-30) — Artur's review of Round 40, six fixes.** (1) *The water's reflection*
+> read as low-res artefacts: it was redrawn as dashes from a coarse mip (2.2), each 6 px band taking
+> its middle row, so every reflected line became a staircase. Now the mirror image is sampled whole,
+> at the mip the eye needs (all three strip textures are always sampled, so the derivatives are
+> sound), rippled — 5 px bands nudged sideways ±~2.6 px, drifting, with a hairline of calm between
+> them — and faded by Schlick's Fresnel (water mirrors at a glance, not looking down), so it lies
+> along the far shore and is gone well before the deck (`uStrength` 0.55). Default stays `drawn`;
+> `?refl=cut` is the clean water. (2) A tap on the terrace splashed: since the deck's top became its
+> own material (Round 40's opening), `hidden()` skipped the deck as a multi-material mesh — it now
+> takes the material of the face the ray met; checked on the real GPU (water splashes; deck, right
+> terrace and pier do not). (3) Fuji back as it was (the light-grey flank and the motif `fill`
+> option removed). (4) Laughs rarer: `LAUGH_CHANCE` 0.18 → 0.1 at a turn's end, never twice in a
+> circle within `LAUGH_AGAIN` 40 s nor two circles within `LAUGH_GAP` 12 s (a laugh blocked by them
+> is a plain beat of silence; lulls keep their 20 %) — measured 4 laughs in 90 s (was ~one every
+> 4–5 s). (5) Gulls: `FLOCKS` in `Illustrated.tsx` — four flocks, each its own stretch of the sky the
+> home view sees (φ ≈ 172–255 at 16:9: an arc chosen outside that is never seen — the first cut put
+> two there), its own height, pace, size (`scale`, the pen kept at its weight), first appearance
+> (6/19/31/44 s) and gaps: the pair near Fuji (212–252), a pair from the right edge over the
+> torii's hills (150–206), a lone gull high on the left (238–292, `drawGull` frames), a pair low over
+> the water in front of the near hills (r 40, 178–232). Sound: `flyers` keyed by the crossing's id (the
+> flocks overlap), and a gull calls only while it is on screen (`seen`); a crossing claims the Zeneks'
+> sky glance only if nothing else holds it. Every crossing fades in and out over its first and last
+> 5 % (`EDGE`) instead of popping — on a wide window the plane used to vanish mid-sky. (6) The plane
+> and its contrail are drawn on the sky (`SKY_DEPTH`: their depth pushed to the back, so every drawn
+> shape — hills of any ring, trees, clouds — hides them); the contrail had crossed the far hills in
+> front while its plane was already behind a near one. The contrail fades out with the plane
+> (`uFade`). Checks: probe-nan clean, build +0.5 KB gz.
+>
+> **Round 42 (2026-09-30) — Artur's review of Round 41, four fixes.** (1) *The reflection*, still
+> "tattered, a bit pixelated" (its 5 px row bands and the hairlines of calm between them read as scan
+> lines): rewritten to read as the water reflects the terrace — the mirrored strips sampled with
+> `textureGrad` at gradients scaled by `uSoft` 5.5 (a ~2.5-mip blur, one fetch per ring per tap:
+> the segment chosen by branch, the gradients taken before it), smeared up and down over `TAPS` 5
+> (3 on LITE) weighted taps `uSmear` 2.6 px apart, swayed by a continuous sine down the screen
+> (never bands), gain 1.5 over strength 0.42 with the Fresnel fade (`?reflk=&reflg=&refls=&reflm=`
+> tune it). Cost: most water mirrors only sky — a pixel whose mirrored ray clears all three strips
+> is discarded before the taps (the old Fresnel cut never fired: its floor was above the cut-off);
+> GPU time per frame (timer queries, 1470×827 @2×, production builds) equals the published build's
+> (15.9–16.1 vs 15.7 ms). (2) *Gulls*: three flocks, spread round the page (Artur's screenshots of
+> the orbit's two ends): a pair above Fuji (φ 212–248, the home view), a smaller pair far right over
+> the gate (φ 96–146, seen from az −50), a lone gull far left (φ 280–330, seen from az 115). All at
+> r 70 and flying in the open sky ABOVE every silhouette: heights from a model of the composition
+> (every ring's hills, trees, torii, gate, pagoda, Fuji, city) and the camera — a flock physically
+> higher than the near ring's silhouette under its path (±12°) is above it from any view, and at the
+> default zoom above the mid and far rings too, inside the frame (the home view's open sky is a band
+> ~1.1–2.3 units tall at the top of the frame): ys fuji 10.2–10.6, right 10.75–11.0, left 10.0–10.6
+> above the water (were 2.4–7.2: among and through the near hills). Crossings within `APART` 60°
+> of one already up wait for it (the Fuji pair and the left gull take turns; the plane and the Fuji
+> pair too). The plane flew at 4.6–8.4 — since Round 41 behind every drawn shape, so at the home view
+> it was hidden the whole way: now 10.4–10.8, climbing 0.3. (3) *The koi*: its outline was drawn for
+> one distance (2 px at 52 units, ×1.1) — nearer tails wore 3–4 px, and the stem, thinner than two
+> strokes, filled in solid. Now one canvas redrawn each time a tail comes up, its line the DS's 2 px
+> at its own distance (`STROKE_PX · unitsPerPx(d)`), the stem a single line, the fin a paper body a
+> little larger (0.8 units), no inner strokes. (4) *The tap*: Round 40's 163 ms wait for the stretch
+> made taps and bubble swaps feel slower than the published site — removed (the tap path is the
+> published one again: `say` at once). Measured with the machine calm: both builds 60.1 fps, no
+> frame over 25 ms, the bubble up 63 ms after a tap. Note for reviewing: the dev server runs React
+> in development and `StrictMode` (every render twice) — judge feel on `npm run build && npm run
+> preview`. Earlier A/B runs that showed dropped frames in both builds were other GPU load on the
+> machine (timer queries separate it).
+>
 > **Open craft debt:** the sculpts are close in mass and placement but a step behind the
 > designs in surface detail — character face placements measured with a slightly small body radius (Mateusz confirmed: ≈ 0.09 R low) — re-measure all designs on silhouette fits; Meshy/Tripo on hold (Artur, 2026-09-23: refine here first); body/eye material vs the designs; all 14 built;
 > JS ≈ 405 KB gz in all (first chunk 86 KB, Scene 209 KB), ~55 KB over the 350 budget in sum

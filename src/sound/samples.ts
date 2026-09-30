@@ -1,5 +1,5 @@
 import { clamp } from '../lib/anim'
-import type { Bed, Out } from './synth'
+import { SWELL, type Bed, type Out } from './synth'
 import { inKey } from './key'
 
 // Recorded sounds (ElevenLabs, auditioned and picked: docs/sound/prompts.json) in place of
@@ -234,5 +234,7 @@ export function bed(o: Out, cue: 'lake' | 'breeze', t: number): Bed | null {
       master.gain.setTargetAtTime(0, when, 0.3)
       for (const s of sources) s.stop(when + 2)
     },
+    // the breeze swells as a gust is seen to cross (src/lib/wind.ts); the lake keeps its calm
+    swell: cue === 'breeze' ? (k, when) => master.gain.setTargetAtTime(1 + SWELL * k, when, 0.7) : undefined,
   }
 }

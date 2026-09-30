@@ -1,5 +1,5 @@
 import { Vector3 } from 'three'
-import { smoothstep } from '../lib/anim'
+import { smooth, smoothstep } from '../lib/anim'
 import type { HeadTraits } from './parts'
 import { CANON } from './proportions'
 import { BALL } from './edyta-layout'
@@ -8,66 +8,141 @@ import { BALL } from './edyta-layout'
 // what a motion designer would keyframe, written as functions so every character
 // can run them on its own clock with its own timing. Hands move in R units from
 // their rest position (in the hands' frame, which follows the body's turn); angles
-// are radians added to the head; `sy` stretches the body. Amplitudes are tiny on
-// purpose — a toy, not a cartoon.
+// are radians added to the head; `sy` stretches the body (motion.ts keeps its volume),
+// `hop` lifts it off its seat (R units). Amplitudes are small on purpose — a toy, not a
+// cartoon — but the beats that carry a conversation (talking, laughing) are sized to read
+// from the room's distance, where a front-row Zenek is ~120 px across (2026-09-29).
 
-export type GestureKind = 'talk' | 'look' | 'scratch' | 'wave' | 'stretch' | 'nod' | 'tilt' | 'laugh' | 'shrug' | 'gaze'
-/** hl/hr move the hands (or a jointed arm's shoulder); al/ar raise a jointed arm out to the side, bl/br bend its elbow (radians). */
-export type Offsets = { hl: Vector3; hr: Vector3; pitch: number; yaw: number; roll: number; sy: number; al: number; ar: number; bl: number; br: number; glow: number }
+export type GestureKind = 'talk' | 'look' | 'scratch' | 'wave' | 'stretch' | 'nod' | 'tilt' | 'laugh' | 'shrug' | 'gaze' | 'hello' | 'squint'
+/** hl/hr move the hands (or a jointed arm's shoulder); al/ar raise a jointed arm out to the side, bl/br bend its elbow (radians); `lid` narrows the eyes (0…1). */
+export type Offsets = { hl: Vector3; hr: Vector3; pitch: number; yaw: number; roll: number; sy: number; hop: number; al: number; ar: number; bl: number; br: number; glow: number; lid: number }
 
-export const DURATION: Record<GestureKind, number> = { talk: 3.2, look: 2.9, scratch: 2.4, wave: 1.7, stretch: 2.0, nod: 1.3, tilt: 2.6, laugh: 1.5, shrug: 1.35, gaze: 3.8 }
+export const DURATION: Record<GestureKind, number> = { talk: 3.2, look: 2.9, scratch: 2.4, wave: 1.7, stretch: 2.0, nod: 1.3, tilt: 2.6, laugh: 1.5, shrug: 1.35, gaze: 3.8, hello: 1.0, squint: 1.8 }
 
 /** Gestures a character's parts allow: nobody scratches through their hair; only a crystal ball can be gazed into. */
 export const allowed = (kind: GestureKind, t: HeadTraits) => !(kind === 'scratch' && t.crown) && (kind !== 'gaze' || !!t.holds)
 
-export const offsets = (): Offsets => ({ hl: new Vector3(), hr: new Vector3(), pitch: 0, yaw: 0, roll: 0, sy: 0, al: 0, ar: 0, bl: 0, br: 0, glow: 0 })
+export const offsets = (): Offsets => ({ hl: new Vector3(), hr: new Vector3(), pitch: 0, yaw: 0, roll: 0, sy: 0, hop: 0, al: 0, ar: 0, bl: 0, br: 0, glow: 0, lid: 0 })
 export function resetOffsets(o: Offsets) {
   o.hl.set(0, 0, 0)
   o.hr.set(0, 0, 0)
-  o.pitch = o.yaw = o.roll = o.sy = 0
+  o.pitch = o.yaw = o.roll = o.sy = o.hop = 0
   o.al = o.ar = o.bl = o.br = 0
-  o.glow = 0
+  o.glow = o.lid = 0
 }
 
 /** Attack / release envelope: 0 → 1 over `a`, 1 → 0 over the last `r`. */
 const win = (u: number, a: number, r: number) => smoothstep(u / a) * smoothstep((1 - u) / r)
 const TAU = Math.PI * 2
 const NO_TRAITS: HeadTraits = { crown: false, longSides: false, front: false }
+/** A steady pseudo-random number in [0, 1) for a phrase's length, a beat's chance. */
+const hash1 = (n: number) => {
+  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
+
+// Talking (see 'talk'): phrases of syllables with rests between them, and now and then a beat
+// of emphasis with a hand.
+const PHRASE = 1.9 // s: one phrase and its rest
+const SYLLABLES = 2.9 // a second
+const BOUNCE = 0.045 // of the body's height, each syllable
+const BEAT = 0.42 // share of a phrase the emphasis takes, from its start
+// Laughing (see 'laugh'): [from, to, height in R] — each hop smaller than the last.
+const LAUGH: [number, number, number][] = [[0.05, 0.29, 0.11], [0.29, 0.48, 0.07], [0.48, 0.63, 0.04]]
 
 /**
  * Write the gesture's offsets at progress `u` into `o` (additive to whatever is
  * there). `side` is ±1: which hand, which way to tilt. `dur` is the gesture's
  * length in seconds (a talking turn can be long or short; the hands keep the same
- * rhythm); `traits` keep the hands out of hair and beards.
+ * rhythm); `traits` keep the hands out of hair and beards; `seed` (the character's)
+ * keeps two talkers from sharing one rhythm.
  */
-export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur = DURATION[kind], traits: HeadTraits = NO_TRAITS) {
-  gestureRaw(kind, u, side, o, dur, traits)
+export function gesture(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur = DURATION[kind], traits: HeadTraits = NO_TRAITS, seed = 0) {
+  gestureRaw(kind, u, side, o, dur, traits, seed)
   // a paw holding something moves gently: a third of the gesture (one gesture a frame, so this
   // scales only its own) — except in the gesture made for what it holds
   if (traits.holds && kind !== 'gaze') (traits.holds === 'r' ? o.hr : o.hl).multiplyScalar(HOLD)
 }
 const HOLD = 0.35
 
-function gestureRaw(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur: number, traits: HeadTraits) {
+function gestureRaw(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur: number, traits: HeadTraits, seed: number) {
   const hand = side > 0 ? o.hr : o.hl
   switch (kind) {
     case 'talk': {
-      // hands bob in alternation, a little forward, as if making a point — in
-      // phrases: a slow swell over the turn, so the hands rest between points.
-      // Hands rest with their centres 0.115 R outside the body; every target below
-      // keeps them at least that far out, so a gesture is never swallowed by the sphere.
+      // Talking, the way a toy without a mouth talks: the whole body bounces with the
+      // syllables — about three a second, in phrases with rests between them — and the head
+      // dips a little on the beat. From across the room that reads as talk; the hands' bob
+      // alone did not (2026-09-29). The hands drift low with the phrase, but at the start of
+      // about half the phrases one makes a point: forward and up, quick in, slow out (a
+      // jointed arm bends at the elbow instead). Hands rest with their centres 0.115 R
+      // outside the body; every target below keeps them at least that far out, so a
+      // gesture is never swallowed by the sphere.
       const sec = u * dur
-      const e = win(u, Math.min(0.3, 0.5 / dur), Math.min(0.3, 0.7 / dur))
-      const phrase = 0.55 + 0.45 * Math.sin(TAU * sec * 0.31 + side)
-      const a = e * phrase
+      const e = win(u, Math.min(0.3, 0.35 / dur), Math.min(0.3, 0.5 / dur))
+      const pc = sec / PHRASE + (side > 0 ? 0.35 : 0.8) // the phrase clock: which phrase, how far into it
+      const k = Math.floor(pc)
+      const f = pc - k
+      const key = k + seed * 0.618 + (side > 0 ? 0.5 : 0)
+      const said = 0.55 + 0.25 * hash1(key) // the share of the phrase spoken before its rest
+      const gate = smooth(0, 0.07, f) * smooth(said, said - 0.12, f)
+      const syl = Math.sin(TAU * (SYLLABLES * sec + 0.18 * Math.sin(TAU * 0.6 * sec + side)))
+      o.sy += e * gate * BOUNCE * syl
+      o.pitch += e * (0.035 * gate * Math.max(0, syl) + 0.02 * Math.sin(TAU * sec * 0.47))
+      const a = e * (0.35 + 0.65 * gate)
       const w = TAU * sec * 0.94
-      o.hl.y += a * (0.12 + 0.12 * Math.sin(w))
-      o.hr.y += a * (0.12 + 0.12 * Math.sin(w + 2.6))
-      o.hl.z += a * 0.1
-      o.hr.z += a * 0.1
-      o.hl.x -= a * 0.04 * Math.sin(w)
-      o.hr.x += a * 0.04 * Math.sin(w + 2.6)
-      o.pitch += e * 0.028 * Math.sin(TAU * sec * 0.47)
+      o.hl.y += a * (0.06 + 0.05 * Math.sin(w))
+      o.hr.y += a * (0.06 + 0.05 * Math.sin(w + 2.6))
+      o.hl.z += a * 0.08
+      o.hr.z += a * 0.08
+      if (f < BEAT && hash1(key * 1.7 + 0.3) > 0.45) {
+        const x = f / BEAT
+        const b = e * smooth(0, 0.22, x) * smooth(1, 0.38, x)
+        const right = (k + (side > 0 ? 1 : 0)) % 2 === 0 // the hands take turns making a point
+        if (traits.bulky) {
+          if (right) (o.br += 0.75 * b), (o.ar += 0.12 * b)
+          else (o.bl += 0.75 * b), (o.al += 0.12 * b)
+        } else {
+          const h = right ? o.hr : o.hl
+          const out = right ? 1 : -1 // away from the body (the right hand sits at +x)
+          if (traits.front || traits.collar) {
+            // a full beard in front, or a collar's lapels: the point is made a little out to
+            // the side and lower, clear of them (scripts/check-hands.mjs)
+            h.y += (traits.collar ? 0.09 : 0.15) * b
+            h.z += (traits.collar ? 0.15 : 0.12) * b
+            h.x += out * 0.05 * b
+          } else {
+            h.y += 0.2 * b
+            h.z += 0.2 * b
+            h.x -= out * 0.03 * b
+          }
+        }
+      }
+      break
+    }
+    case 'squint': {
+      // a gust in the face (src/lib/wind.ts): the eyes narrow, the chin dips into it, a small
+      // shiver runs through the body, and it is over
+      const e = win(u, 0.18, 0.35)
+      o.lid += e
+      o.pitch += 0.05 * e
+      o.roll += side * 0.035 * e
+      o.sy += 0.01 * Math.sin(TAU * u * 9) * e * smoothstep((0.6 - u) / 0.3)
+      o.hl.y += 0.04 * e
+      o.hr.y += 0.04 * e
+      break
+    }
+    case 'hello': {
+      // "hi!" — as the room meets the viewer (motion.ts): a quick little lift with the chin up
+      // and the hands up a touch, then a nod as it lands
+      const up = Math.sin(Math.PI * Math.min(1, u / 0.42))
+      const nod = Math.sin(Math.PI * smoothstep((u - 0.38) / 0.45))
+      o.hop += 0.06 * up
+      o.sy += 0.03 * up
+      o.pitch += -0.09 * up + 0.1 * nod
+      o.hl.y += 0.1 * up
+      o.hr.y += 0.1 * up
+      o.hl.z += 0.05 * up
+      o.hr.z += 0.05 * up
       break
     }
     case 'look': {
@@ -179,15 +254,29 @@ function gestureRaw(kind: GestureKind, u: number, side: 1 | -1, o: Offsets, dur:
       break
     }
     case 'laugh': {
-      // a shared laugh: the body giggles in small decaying bounces, chin up, the
-      // hands lift a touch — over in a breath
-      const e = win(u, 0.08, 0.35)
-      const giggle = Math.sin(TAU * u * 5.4) * (1 - u)
-      o.sy += e * (0.01 + 0.016 * giggle)
-      o.pitch -= e * 0.075
-      o.roll += e * 0.025 * Math.sin(TAU * u * 1.7) * side
-      o.hl.y += e * (0.08 + 0.04 * giggle)
-      o.hr.y += e * (0.08 + 0.04 * giggle)
+      // a shared laugh you can see across the room: two or three little hops, each smaller
+      // than the last — squashed as it lands, stretched as it leaves — the chin up, the hands
+      // up a touch; over in a breath (it used to giggle in place by 1–2.6 % of its height,
+      // which nobody saw from the home view, 2026-09-29)
+      const e = win(u, 0.06, 0.3)
+      const land = (h: number) => -0.22 * h // squashed where it meets its seat, after a hop of h
+      let prev = LAUGH[0][2]
+      if (u < LAUGH[0][0]) o.sy += land(prev) * smoothstep(u / LAUGH[0][0]) // a quick crouch before the first
+      for (const [a, b, h] of LAUGH) {
+        if (u >= a && u < b) {
+          const x = (u - a) / (b - a)
+          const air = Math.sin(Math.PI * x)
+          o.hop += h * 4 * x * (1 - x)
+          o.sy += ((1 - x) * land(prev) + x * land(h)) * (1 - air) + 0.18 * h * air // from one landing's squash to the next, stretched in the air
+        }
+        prev = h
+      }
+      const last = LAUGH[LAUGH.length - 1]
+      if (u >= last[1]) o.sy += land(last[2]) * smoothstep((last[1] + 0.12 - u) / 0.12) // and up again after the last
+      o.pitch -= e * 0.1
+      o.roll += e * 0.03 * Math.sin(TAU * u * 1.7) * side
+      o.hl.y += e * 0.1
+      o.hr.y += e * 0.1
       o.hl.z += e * 0.1
       o.hr.z += e * 0.1
       break

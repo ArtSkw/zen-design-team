@@ -191,6 +191,17 @@ html[data-phase='loading'] .vc__group, html[data-phase='title'] .vc__group { opa
   transform: translate(-50%, -100%) translateY(0) scale(1);
   transition-duration: 160ms;
 }
+/* ?bubble=ink (Bubble, for comparison): drawn by the title's hand — a 2 px ink outline the pen
+   writes on (the svg), flat paper, the tail two strokes, no shadow; the name tag in the same ink */
+.bubble--ink { box-shadow: none; }
+.bubble--ink:not(.bubble--out) { animation: bubble-ink-in 120ms var(--ease-out) both; }
+.bubble--ink::after { display: none; }
+.bubble__ink { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.bubble__ink path, .bubble__tail path { fill: none; stroke: #222222; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bubble__tail { position: absolute; left: var(--tail-x); top: calc(100% - 2px); transform: translateX(-50%); overflow: visible; pointer-events: none; }
+.bubble__tail path.bubble__tail-paper { fill: var(--paper); stroke: none; }
+.nametag--ink { box-shadow: 0 0 0 2px #222222; background: #ffffff; }
+@keyframes bubble-ink-in { from { opacity: 0; } }
 .bubble__quote { margin: 0; text-wrap: balance; }
 /* the next line: its words rise into place as the bubble breathes (Bubble) */
 .bubble__quote--next { animation: quote-in 260ms var(--ease-out) both; }

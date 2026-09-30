@@ -40,16 +40,47 @@ export function deckPiles(): [number, number][] {
 const pileMat = new MeshStandardMaterial({ color: '#7a5a3a', roughness: 0.85 })
 const woodPileGeo = new CylinderGeometry(0.15, 0.17, 1.9, 12)
 
+/**
+ * The deck's top, open where the room stands (2026-09-29): the room rises into place through it.
+ * With the deck whole, the slab sat under the planks for the first ~0.6 s of the rise and the
+ * walls, cushions and lanterns stood through the wood. The opening is the slab's footprint, a hair
+ * inside it, so at rest the slab covers it exactly. (The margins are equal all round, so the
+ * opening sits in the middle of the face whichever way its UVs run.)
+ */
+function openingTexture(w: number, d: number) {
+  const c = document.createElement('canvas')
+  c.width = 1024 // a texel ~2.4 cm: finer than the inset, and a quarter of 2048's memory (it was ~12 MB)
+  c.height = Math.round((1024 * d) / w)
+  const ctx = c.getContext('2d')!
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, c.width, c.height)
+  const inset = 0.03 // world units: the planks run a hair under the slab
+  const kx = c.width / w
+  const kz = c.height / d
+  ctx.fillStyle = '#000'
+  ctx.fillRect((MARGIN + inset) * kx, (MARGIN + inset) * kz, (SET.slab.w - 2 * inset) * kx, (SET.slab.d - 2 * inset) * kz)
+  const t = new CanvasTexture(c)
+  t.generateMipmaps = false
+  return t
+}
+
 function WoodDeck() {
   const tex = plankTexture()
   const w = DECK.x1 - DECK.x0
   const d = DECK.z1 - DECK.z0
   const piles = useMemo(deckPiles, [])
+  const mats = useMemo(() => {
+    tex.repeat.set(w / 2.6, d / 2.6)
+    const side = new MeshStandardMaterial({ map: tex, roughness: 0.72, color: '#e2c69a' })
+    const top = new MeshStandardMaterial({ map: tex, alphaMap: openingTexture(w, d), alphaTest: 0.5, roughness: 0.72, color: '#e2c69a' })
+    // BoxGeometry's faces: +x, −x, +y (the top: open), −y, +z, −z
+    return [side, side, top, side, side, side]
+  }, [tex, w, d])
+  useEffect(() => () => mats.forEach((m) => (m.alphaMap?.dispose(), m.dispose())), [mats])
   return (
     <group>
-      <mesh position={P(DECK.x0 + w / 2, DECK_TOP - DECK_H / 2, DECK.z0 + d / 2)} castShadow receiveShadow>
+      <mesh position={P(DECK.x0 + w / 2, DECK_TOP - DECK_H / 2, DECK.z0 + d / 2)} material={mats} castShadow receiveShadow>
         <boxGeometry args={[w, DECK_H, d]} />
-        <meshStandardMaterial map={tex} roughness={0.72} color="#e2c69a" map-repeat={[w / 2.6, d / 2.6]} />
       </mesh>
       <mesh position={P((PIER.x0 + PIER.x1) / 2, DECK_TOP - DECK_H / 2, (PIER.z0 + PIER.z1) / 2)} castShadow receiveShadow>
         <boxGeometry args={[PIER.x1 - PIER.x0, DECK_H, PIER.z1 - PIER.z0]} />

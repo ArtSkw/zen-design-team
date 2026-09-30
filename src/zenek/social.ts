@@ -1,7 +1,8 @@
-import { CIRCLES, byId } from '../cast/team'
+import { CIRCLES, TEAM, byId } from '../cast/team'
 import { mulberry32, range } from '../lib/rng'
 import { store } from '../lib/store'
-import { P } from '../lib/params'
+import { DEBUG, P } from '../lib/params'
+import { say } from '../lib/talk'
 
 // The room's conversations. Each circle (src/cast/team.ts) takes turns: one Zenek
 // holds the floor for a few seconds — talks with its hands and looks from one
@@ -53,23 +54,61 @@ const circleOf = new Map<string, Circle>()
 for (const c of circles) for (const id of c.ids) circleOf.set(id, c)
 
 let lastTick = -1
+/** Laughter: a turn ends in one only now and then, and each is its own moment in the room. */
+const LAUGH_CHANCE = 0.1 // was 0.18
+const LAUGH_AGAIN = 40 // s, the same circle
+const LAUGH_GAP = 12 // s, anywhere in the room
+let lastLaugh = -1e9
+
+// ---- the room meets the viewer -----------------------------------------------------------
+/**
+ * Once, as the last of them arrives (motion.ts calls `greetRoom`): the title said "Meet ZEN
+ * Design Team", and here the team meets you — every face turns to the viewer, a ripple
+ * spreading out from the host `step` s apart, a few wave and the rest say a small "hi"; each
+ * holds it `hold` s, then the circles turn back in, a beat apart (their talk waits for it).
+ * `host` s in, the host says his first line — the postcard's own thank-you — unless the
+ * visitor has already tapped someone (`?host=0`: not at all). `?greet=1` with `?intro=0`
+ * plays it on a settled room (design check).
+ */
+export const GREET = { step: 0.075, hold: 2.3, host: 1.25 }
+export const greeting = { at: -1, until: -1, hostSaid: false }
+export const HOST = TEAM.find((m) => m.gaze === 'viewer')?.id ?? TEAM[TEAM.length - 1].id
+const HOST_LINE = P.flag('host', true)
+
+export function greetRoom(t: number) {
+  if (greeting.at >= 0) return
+  greeting.at = t
+  greeting.until = t + GREET.hold + (TEAM.length - 1) * GREET.step + 0.2
+  circles.forEach((c, i) => {
+    c.speaker = null // (a design check may greet a room already talking)
+    c.nextAt = Math.max(c.nextAt, greeting.until + 0.4 + i * 0.9 + c.rng() * 0.5)
+  })
+}
 
 /** Advance every circle to time t (idempotent within a frame). */
 export function tickSocial(t: number) {
   if (t === lastTick) return
   lastTick = t
+  if (greeting.at < 0 && DEBUG.greet && !DEBUG.intro && store.get().phase === 'ready' && t > 1.5) greetRoom(t)
+  if (greeting.at >= 0 && !greeting.hostSaid && t >= greeting.at + GREET.host) {
+    greeting.hostSaid = true
+    if (HOST_LINE && !store.get().active) say(HOST) // (not over a line the visitor has already asked for)
+  }
   const active = store.get().active
   for (const c of circles) {
     if (active && c.ids.includes(active)) continue // the room listens to whoever was tapped
     if (c.speaker && t >= c.t1) {
-      // the turn ends: a beat of silence, sometimes a laugh, now and then a lull
+      // the turn ends: a beat of silence, sometimes a laugh, now and then a lull. A laugh is a
+      // moment, not a habit (2026-09-30: with the hops it read as someone laughing every other
+      // second): rarer, never twice in a circle within LAUGH_AGAIN, never two circles within LAUGH_GAP
       c.last = c.speaker
       c.speaker = null
       const r = c.rng()
-      if (r < 0.18) {
+      if (r < LAUGH_CHANCE && (c.laughAt < 0 || t - c.laughAt > LAUGH_AGAIN) && t - lastLaugh > LAUGH_GAP) {
         c.laughAt = t + 0.12
+        lastLaugh = c.laughAt
         c.nextAt = t + range(c.rng, 2.4, 3.6)
-      } else if (r < 0.38) c.nextAt = t + range(c.rng, 6, 13)
+      } else if (r >= LAUGH_CHANCE && r < LAUGH_CHANCE + 0.2) c.nextAt = t + range(c.rng, 6, 13) // a lull
       else c.nextAt = t + range(c.rng, 0.8, 2.4)
     }
     if (!c.speaker && t >= c.nextAt && store.get().phase === 'ready') {

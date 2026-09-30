@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { byId } from '../cast/team'
 import { useStore } from '../lib/store'
+import { INK } from './Bubble'
 
 // Moved by the projector (inside the canvas) above the hovered Zenek — a transform on its
 // own layer, measured only when the name changes (see Bubble).
@@ -34,7 +35,7 @@ export function NameTag() {
   const on = !!hover && hover !== active
   return (
     <div ref={pos} className="nametag-pos" style={{ transform: 'translate3d(-9999px, 0, 0)' }} aria-hidden="true">
-      <div ref={tag} className={`nametag${on ? ' nametag--on' : ''}`}>
+      <div ref={tag} className={`nametag${INK ? ' nametag--ink' : ''}${on ? ' nametag--on' : ''}`}>
         {label}
       </div>
     </div>

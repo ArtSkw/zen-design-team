@@ -41,4 +41,6 @@ export const DEBUG = {
   dust: P.str('dust', '1'),        // the title lets go into petals before the room rises; '0' = the plain fade; 'hold' = frozen at its start, window.__dust.seek(ms) (design check)
   loaderT: P.num('lt', -1),        // with hold=1&done=1: freeze the loader's completion timeline at this second
   loaderAngle: P.num('la', 0),     // …and complete from this spin angle, in degrees (0 = dot at the bottom)
+  greet: P.flag('greet'),          // with intro=0: the room still meets the viewer, on a settled room (design check; src/zenek/social.ts)
+  sway: P.flag('sway', true),      // 0 = the camera holds still when idle (motion measurements: only the characters move)
 }

@@ -25,7 +25,8 @@ export const LIMITS = {
   maxAz: rad(115),
 }
 
-type Goal = Partial<Spherical>
+/** A camera goal; `home` also brings the orbit's centre back to where it started (a pan, the portrait survey). */
+type Goal = Partial<Spherical> & { home?: boolean }
 const state: { goal: Goal | null; goalLambda?: number; lastUserAt: number; current: Spherical } = { goal: null, lastUserAt: 0, current: { ...HOME } }
 
 export const view = {
@@ -39,7 +40,7 @@ export const view = {
     state.lastUserAt = performance.now()
   },
   reset() {
-    state.goal = { ...HOME }
+    state.goal = { ...HOME, home: true }
     state.lastUserAt = performance.now()
   },
   touched() {

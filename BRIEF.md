@@ -5,25 +5,14 @@
 > not carry file-level engineering detail. The buildable execution spec lives in
 > [`docs/plan.md`](docs/plan.md).
 >
-> **Where we are (2026-09-23, Round 12):** v0.5 running. The set is a code-only diorama
-> rebuilt from Artur's 2D diorama render; Artur, Janek and Magda R are rebuilt from their
-> approved 2D designs; loader, entrance, idle, gaze, tap-to-speak and the orbit view all
-> work. The world beyond the room is the *illustrated page* (direction C below): the
-> wooden terrace on a pale water, and beyond it the DS torii, Fuji, pagodas, trees,
-> gulls and plane on three depths of a few rounded hills — kept minimal on purpose; the
-> far city with the Palace of Culture rises from behind its own low ridge, and the
-> clouds are the design system's own. The room gained its charm back: a broad-leaf plant, a cloud-pruned pine bonsai,
-> puffed cushions, a teapot on the side table, and Magda R on the green cushion so the
-> table and bench show. The Zeneks now *converse*: small circles take turns — one talks
-> with its hands, the others turn to it and nod; turns end in a beat of silence, a
-> shrug, sometimes a shared laugh; eyes flick and lead the head; a laugh or a wave
-> nearby earns a glance. Nobody scratches through their hair. Eight of the fourteen are now
-> designed and built — Artur, Janek, Magda R, Krystian, Kamil, Mateusz N, Łukasz P (the
-> weight lifter, muscular arms kept in scale) and Mateusz K — hair, beards and arms
-> sculpted as clay in code. Next: Artur decides
-> whether to try Meshy/Tripo on the designs (ready to run, `docs/research/character-
-> fidelity.md`), supplies the remaining six designs and the Polish quotes. See
-> `docs/plan.md`.
+> **Where we are (2026-09-30, Round 40):** all fourteen are built and live, with the sound and
+> the shō's music. A motion audit (2026-09-29) found the room's motion tuned for a close-up rather
+> than for the view people actually watch, and a world with effects but no causes; its answer is
+> built in five steps and waits for Artur's review in the browser (uncommitted): the characters
+> act for the home view and keep their faces to the viewer, the room *meets* the viewer after the
+> title, phones get their own camera, the water is drawn, one wind moves the world, and a handful of
+> look-closer details. What is still his call is listed under open decision 9. See `docs/plan.md`
+> (Round 40).
 >
 > **Inspiration, not heritage:** [backyarddesigners.club](https://backyarddesigners.club/)
 > (Ridd and Tommy Geoco, 2026). We borrow the feeling — a team sitting together,
@@ -76,7 +65,10 @@ machine and are never committed; only the derived Zenek character sheets are.
    soon as it is written it lets go into falling petals, the room fades in, rises into
    place and the camera settles
    from a pulled-back angle. The Zeneks arrive in a quick staggered wave, back
-   rows first. About three seconds from first paint to a settled scene.
+   rows first — and then the room meets the viewer (owner-directed round, 2026-09-29): as the
+   last one lands, every face turns to them, a ripple spreading out from the host, a few wave and
+   the rest nod a small "hi"; the host says his first line — the postcard's own thank-you — and the
+   circles turn back to their talk. About three seconds from first paint to a settled scene.
 2. **The room.** Fourteen Zeneks on the concrete floor of the wood room, arranged
    like a team that just sat down, not like a chart. Each carries exactly one
    signature attribute drawn from the person's photo — glasses, curls, a beard,
@@ -85,10 +77,13 @@ machine and are never committed; only the derived Zenek character sheets are.
    neighbour, or looks around on its own; now and then one gestures — talks with
    its hands, scratches its head, stretches, nods, tilts its head — and when a plane
    or a pair of gulls crosses the sky, a few look up. When the cursor comes close they turn,
-   slowly, to look at whoever is approaching. Hover lifts one a hair and shows
-   the name. Nothing else moves.
-3. **The voice.** Tap a Zenek: it boings once and a speech bubble pops from
-   above its head with one line alone; the name lives on hover. Each Zenek has
+   slowly, to look at whoever is approaching; a camera that comes close earns a curious look too.
+   Hover lifts one a hair and shows the name. Now and then a gust crosses the scene and the whole
+   world answers it once — the water ruffles, the drawn trees lean, a Zenek squints — and is
+   still again.
+3. **The voice.** Tap a Zenek: it boings once, and on the boing's stretch a speech bubble pops
+   from above its head with one line alone — the squash is the wind-up, the line is thrown up
+   (2026-09-29); the name lives on hover. Each Zenek has
    four lines, said in turn as in an RPG: a tap says the next one, and the
    bubble stays up only as long as the line takes to read, then goes by itself —
    the words first, then the bubble drawing back into the speaker (owner-directed
@@ -161,13 +156,22 @@ perspective are the point; equal spacing and straight lines are the enemy.
 Artur sits at the right edge, arriving last; the focus stays on the team.
 
 **Motion doctrine.** Calm, confident, playful in small doses. Amplitudes are
-tiny; springs bounce once and settle; no two characters ever move in sync
+small; springs bounce once and settle; no two characters ever move in sync
 (every clock is seeded per character); nothing moves without a reason — a
 timer with human intervals, or the user's hand. Life comes from conversation: circles
 take turns (a speaker, listeners who turn and nod, a shared laugh now and then, lulls
 when each looks around), and gestures respect what a character wears — no hand ever
 passes through hair (a head scratch is for bare heads only). `prefers-reduced-motion`
 halves every amplitude and swaps hops for fades.
+*Added 2026-09-29 (the motion audit):* **stage for the view people watch** — the beats that
+carry a conversation read at the home view's size (a talker bounces with its syllables, a laugh
+is a few little hops); the finer life (saccades, breath) is the close-up's reward. **Open
+staging** — a face never turns much more than ~37° from the viewer; the eyes look the rest of the
+way. **Velocity-continuous** — turns and camera moves set off gently and never kink.
+**One cause for ambient motion** — one wind moves the water, the trees, the plant, the clouds
+and the breeze together; every sound the world makes has something visible that made it (a
+ripple its swell, a plop its fish). **The phone has its own camera** — a higher home and a slow
+survey across the team, since the room is wider than an upright screen.
 
 **Type and chrome.** Nunito (the ZEN UI face) in the bubbles and the loader,
 subset with Polish diacritics. The bubble is paper: white, soft shadow, a small
@@ -303,3 +307,13 @@ postcard has 24 px corners and a soft shadow. That is all the UI there is.
    (SDF, spike behind `?sculpt=1`), AI image-to-3D for the hair/beard only, the two
    combined, or hand sculpting. Needs Artur's call on uploading the designs to a 3D
    generator and on the brief's "≤ 3 AI accessories" rule.
+9. **The motion audit's round** (Rounds 40–42, built 2026-09-29/30, uncommitted) — for Artur's
+   review in the browser. Reviewed twice (2026-09-30): the reflection is now a soft mirror image,
+   as the water reflects the terrace; a tap on the terrace no longer splashes; Fuji is back as it
+   was; laughs are rarer; three flocks of gulls, well apart round the page, fly in the open sky above
+   the hills (and the plane with them); the koi's tail is drawn in the DS's 2 px line; a tap answers
+   at once again. Defaults chosen and switches to compare: the bubble — the approved paper one, or
+   drawn by the title's hand (`?bubble=ink`); the water's reflection — the soft mirror (default),
+   none (`?refl=cut`), or the old blur (`?refl=blur`); the host's first line after the greeting
+   (`?host=0` without it); the wind (`?wind=0` without it; `?gust=3` brings the first gust 3 s in).
+   Not done, optional: a paler deck.

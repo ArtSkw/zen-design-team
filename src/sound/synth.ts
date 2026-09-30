@@ -382,7 +382,8 @@ export function dot(o: Out, t: number, { level = 1 } = {}) {
 
 // ---- the world: beds --------------------------------------------------------------------------
 
-export type Bed = { tick(until: number): void; bias(pan: number, at: number): void; stop(at: number): void }
+/** A bed of the world's sound. `swell` (the breeze): how gusty it is now, 0…1 (src/lib/wind.ts), heard as the gust is seen. */
+export type Bed = { tick(until: number): void; bias(pan: number, at: number): void; stop(at: number): void; swell?(k: number, at: number): void }
 
 function looped(o: Out, buffer: AudioBuffer, t: number) {
   const src = o.ctx.createBufferSource()
@@ -473,7 +474,8 @@ export function breeze(to: Out, t: number, rng: Rng = Math.random): Bed {
   const merge = ctx.createChannelMerger(2)
   const gust = ctx.createGain()
   gust.gain.value = 0.5
-  merge.connect(gust).connect(o.dest)
+  const swell = ctx.createGain() // a gust the viewer sees (src/lib/wind.ts), over the breeze's own
+  merge.connect(gust).connect(swell).connect(o.dest)
   const bands = [0, 1].map((ch) => {
     const bp = ctx.createBiquadFilter()
     bp.type = 'bandpass'
@@ -515,8 +517,13 @@ export function breeze(to: Out, t: number, rng: Rng = Math.random): Bed {
       gust.gain.setTargetAtTime(0, at, 0.3)
       lg.gain.setTargetAtTime(0, at, 0.3)
     },
+    swell(k, at) {
+      swell.gain.setTargetAtTime(1 + SWELL * k, at, 0.7)
+    },
   }
 }
+/** How much a gust at full strength lifts the breeze (×, ≈ +4.6 dB): heard, never louder than a tap. */
+export const SWELL = 0.7
 
 // ---- the world: things that pass ---------------------------------------------------------------
 

@@ -1,4 +1,5 @@
 import { ENTRANCE_ORDER } from '../cast/team'
+import { wind } from '../lib/wind'
 import { store, type State } from '../lib/store'
 import { clamp } from '../lib/anim'
 import { P } from '../lib/params'
@@ -171,6 +172,7 @@ function begin(secs: number) {
     const at = now()
     lake.tick(at + 1.2)
     breeze.tick(at + 1.2)
+    breeze.swell?.(wind.level(), at) // the gust the viewer sees is the gust they hear (src/lib/wind.ts)
     if (at > nextBird) {
       bird()
       nextBird = at + 18 + Math.random() * 32
@@ -197,25 +199,26 @@ function bird() {
   }
 }
 
-type Flyer = { id: number; hum?: syn.Hum; calls: number[] }
-const flyers: Record<'plane' | 'gulls', Flyer | null> = { plane: null, gulls: null }
+type Flyer = { hum?: syn.Hum; calls: number[] }
+const flyers = new Map<number, Flyer>() // by the crossing's id: several flocks may be up at once (2026-09-30)
 
 /**
  * Something crossing the sky, every frame while it is up (src/set/Illustrated.tsx):
- * `u` 0..1 along its way, `pan` from where it is on screen. The plane hums faintly all
- * the way; the gulls call once or twice as they pass.
+ * `u` 0..1 along its way, `pan` from where it is on screen, `seen` whether it is on the
+ * screen at all. The plane hums faintly all the way; gulls call once or twice as they pass —
+ * but only a gull the viewer can see calls (a flock round the far side is silent).
  */
-function flyer(kind: 'plane' | 'gulls', id: number, u: number, pan: number) {
+function flyer(kind: 'plane' | 'gulls', id: number, u: number, pan: number, seen = true) {
   const o = bus('far')
-  let f = flyers[kind]
+  let f = flyers.get(id)
   if (!o || u >= 1) {
     f?.hum?.stop(now())
-    flyers[kind] = null
+    flyers.delete(id)
     return
   }
-  if (!f || f.id !== id) {
-    f?.hum?.stop(now())
-    f = flyers[kind] = { id, calls: kind === 'gulls' ? [0.18 + Math.random() * 0.1, ...(Math.random() < 0.65 ? [0.5 + Math.random() * 0.15] : [])] : [] }
+  if (!f) {
+    f = { calls: kind === 'gulls' ? [0.18 + Math.random() * 0.1, ...(Math.random() < 0.65 ? [0.5 + Math.random() * 0.15] : [])] : [] }
+    flyers.set(id, f)
     note(`flyer:${kind}`)
     if (kind === 'plane') f.hum = syn.planeHum(o, o.ctx.currentTime)
   }
@@ -223,17 +226,23 @@ function flyer(kind: 'plane' | 'gulls', id: number, u: number, pan: number) {
   if (f.hum) f.hum.set(0.5 * Math.sin(Math.PI * clamp(u, 0, 1)) ** 1.5, pan, t)
   while (f.calls.length && u >= f.calls[0]) {
     f.calls.shift()
+    if (!seen) continue // a call nobody can see the gull make is not made
     if (rec.shot(o, 'gulls', t, { pan, rate: 0.96 + Math.random() * 0.08 })) continue
     const n = 1 + Math.floor(Math.random() * 2)
     for (let i = 0; i < n; i++) syn.gull(o, t + i * (0.45 + Math.random() * 0.35), { pan: pan + (Math.random() - 0.5) * 0.15 })
   }
 }
 
-/** A ring about to bloom on the water: now and then — never often — a fish made it. */
+/**
+ * A fish's tail slapping the water as its ring is born. The water decides when (WaterBlooms in
+ * src/set/Illustrated.tsx: now and then — never often — and only where the viewer can see the
+ * tail), so every plop has its fish (2026-09-29; it used to roll its own dice for rings that had
+ * none to show).
+ */
 let lastPlop = -1e9
 function plop(x: number, y: number, z: number, delay: number) {
   const o = bus('far')
-  if (!o || Math.random() > 0.25 || o.ctx.currentTime - lastPlop < 7) return
+  if (!o || o.ctx.currentTime - lastPlop < 5) return
   lastPlop = o.ctx.currentTime
   const { pan, dist } = ear.at(x, y, z)
   note('plop')
