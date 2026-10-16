@@ -9,6 +9,7 @@ import { useSculpt } from './sculptAsset'
 import { Part, handOf, isFacePart, type PartConfig } from './parts'
 import { store, useStore } from '../lib/store'
 import type { ArmSpec, Seat } from '../cast/team'
+import { DEBUG, P } from '../lib/params'
 
 export type ZenekRefs = {
   root: RefObject<Group | null>
@@ -30,6 +31,8 @@ export function useZenekRefs(): ZenekRefs {
 const R = ZR
 const bodyGeo = new SphereGeometry(R, 72, 48)
 const unitGeo = new SphereGeometry(1, 28, 20)
+// `?lab=…&hands=0` (the lab only): the body alone, as the tab-sized favicon draws him (scripts/favicon.mjs)
+const NO_HANDS = !!DEBUG.lab && !P.flag('hands', true)
 const handGeo = new SphereGeometry(CANON.hand.r * R, 40, 28)
 export const HAND_L = new Vector3(-CANON.hand.x * R, CANON.hand.y * R, CANON.hand.z * R)
 export const HAND_R = new Vector3(CANON.hand.x * R, CANON.hand.y * R, CANON.hand.z * R)
@@ -120,7 +123,7 @@ export function Zenek({ id, refs, parts, seat, face, arms, ghost = false, onTap 
         ))}
       </group>
       {/* the hands follow the body's turn, a beat behind */}
-      <group ref={refs.hands}>
+      <group ref={refs.hands} visible={!NO_HANDS}>
         {arms && upperGeo && foreGeo ? (
           ([-1, 1] as const).map((s) => (
             // the right arm is the left one mirrored; motion turns the shoulder and the elbow
