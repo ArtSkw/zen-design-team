@@ -14,6 +14,7 @@ import { GREET, HOST, circleMates, emit, eventsSince, greetRoom, greeting, laugh
 import { skyAttention } from '../lib/sky'
 import { wind } from '../lib/wind'
 import { store } from '../lib/store'
+import { introTime } from '../lib/intro'
 import { sfx } from '../sound/cues'
 import { DEBUG } from '../lib/params'
 import { mulberry32, range } from '../lib/rng'
@@ -178,7 +179,7 @@ export function useZenekMotion(member: Member, refs: ZenekRefs, order: number) {
         root.visible = S.phase === 'loading' // drawn under the curtain while loading: compiled before the entrance (Scene: Rise)
         return
       }
-      const local = t - S.introClock - INTRO_DELAY - order * STAGGER
+      const local = introTime(t, rawDt) - INTRO_DELAY - order * STAGGER // pauses through a stall (src/lib/intro.ts)
       if (local <= 0) {
         root.visible = false
         return

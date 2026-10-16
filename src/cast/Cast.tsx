@@ -54,7 +54,8 @@ export function Cast() {
     }
   }, [])
   if (DEBUG.lab) {
-    const m = TEAM.find((x) => x.id === DEBUG.lab) ?? TEAM[0]
+    // `?lab=zenek`: the mascot itself, none of the team's attributes (the favicon is rendered from it)
+    const m = DEBUG.lab === 'zenek' ? { ...TEAM[0], id: 'zenek', name: 'Zenek', parts: [], face: undefined, arms: undefined } : (TEAM.find((x) => x.id === DEBUG.lab) ?? TEAM[0])
     // `?labyaw=` turns the Zenek (degrees) for views the orbit's limits do not reach (the back)
     const solo: Member = { ...m, seat: { x: 8.6, y: 0, z: -3, yaw: (P.num('labyaw', 0) * Math.PI) / 180 } }
     const glb = P.str('glb', '')

@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, type ComponentRef } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
 import type { Group } from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping, NoToneMapping, Vector3, type Camera, type PerspectiveCamera } from 'three'
+import { ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping, NoToneMapping, Vector3, WebGLRenderTarget, type Camera, type PerspectiveCamera } from 'three'
 import cam from '../stage/camera.json'
 import { DEBUG, LITE, P } from '../lib/params'
 import { store, useStore } from '../lib/store'
+import { introTime } from '../lib/intro'
 import { hush } from '../lib/talk'
 import { clamp, damp, easeOutCubic, smoothstep, spring, type Spring } from '../lib/anim'
 import { Lighting } from './Lighting'
@@ -292,7 +293,7 @@ function Projector() {
 // The whole room rises a little into place as the curtain lifts.
 function Rise({ children }: { children: React.ReactNode }) {
   const ref = useRef<Group>(null)
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, rawDt) => {
     const g = ref.current
     if (!g) return
     const S = store.get()
@@ -303,12 +304,15 @@ function Rise({ children }: { children: React.ReactNode }) {
     if (S.introClock < 0) {
       g.position.y = -1.6
       // drawn under the curtain while loading, so every shader compiles and every buffer
-      // uploads then (the loader spins on the compositor) — not in the middle of the reveal
-      g.visible = S.phase === 'loading'
+      // uploads then (the loader spins on the compositor) — not in the middle of the reveal.
+      // Still drawn in the intro's first frame, before its clock is set: hidden there, the
+      // lanterns' lights went with it, and every material outside the room compiled again
+      // without them (20 programs, a 0.9 s stall on a first visit — 2026-10-16)
+      g.visible = S.phase === 'loading' || S.phase === 'intro'
       return
     }
     g.visible = true
-    const u = clamp((clock.elapsedTime - S.introClock) / 1.5, 0, 1)
+    const u = clamp(introTime(clock.elapsedTime, rawDt) / 1.5, 0, 1)
     g.position.y = -1.6 * (1 - easeOutCubic(u))
   })
   return <group ref={ref}>{children}</group>
@@ -316,18 +320,57 @@ function Rise({ children }: { children: React.ReactNode }) {
 
 const DPR_MAX = LITE ? 1.5 : 2
 
+/** Never wait longer than this for the shaders: a slow compile must not hold the boot. */
+const COMPILE_MAX = 8000
+
 function Clocks() {
   const phase = useStore((s) => s.phase)
   const loaded = useStore((s) => s.loaded)
+  const dressed = useStore((s) => s.sculptsReady && s.posterLoaded)
   const setFrameloop = useThree((s) => s.setFrameloop)
   const setDpr = useThree((s) => s.setDpr)
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  const camera = useThree((s) => s.camera)
   const warm = useRef(0)
   const perf = useRef({ t0: 0, frames: 0, low: 0, dpr: Math.min(DPR_MAX, window.devicePixelRatio || 1) })
+  const [compiled, setCompiled] = useState(!DEBUG.intro)
+
+  // Before the room's first frame, its shaders are compiled in parallel (KHR_parallel_shader_compile)
+  // instead of all at once inside that frame, which held the page for 0.5 s — 7 s on a first visit
+  // to a cold GPU — and stuttered the loader (2026-10-16). Every material, hidden ones too (the
+  // koi, the rings), for the screen and for the reflections' targets; the shadow passes still
+  // compile in the frames drawn under the curtain afterwards.
+  useEffect(() => {
+    if (compiled || !dressed) return
+    let live = true
+    const done = () => live && setCompiled(true)
+    const target = new WebGLRenderTarget(1, 1)
+    // two frames for the dressed cast's meshes to mount
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (!live) return
+        const screen = gl.compileAsync(scene, camera)
+        gl.setRenderTarget(target) // the reflections draw into targets: their own variants
+        const targets = gl.compileAsync(scene, camera)
+        gl.setRenderTarget(null)
+        void Promise.race([Promise.all([screen, targets]), new Promise((r) => setTimeout(r, COMPILE_MAX))])
+          .catch(() => {})
+          .then(done)
+      }),
+    )
+    const fallback = setTimeout(done, COMPILE_MAX + 2000) // whatever happens, the room is drawn
+    return () => {
+      live = false
+      clearTimeout(fallback)
+      target.dispose()
+    }
+  }, [compiled, dressed, gl, scene, camera])
 
   // Once everything has been drawn under the curtain (compiled, uploaded), the 3D rests
   // until the curtain lifts: the loader's check, the title and its petals get the whole
   // device (a phone was drawing the hidden room four times a frame meanwhile).
-  const behind = DEBUG.intro && loaded && (phase === 'loading' || phase === 'title')
+  const behind = DEBUG.intro && ((loaded && (phase === 'loading' || phase === 'title')) || !compiled)
   useEffect(() => {
     setFrameloop(behind ? 'never' : 'always')
   }, [behind, setFrameloop])
@@ -369,6 +412,7 @@ export function Scene() {
   return (
     <div className="scene" onPointerMove={() => store.mutate({ pointerActiveAt: performance.now() })}>
       <Canvas
+        frameloop={DEBUG.intro ? 'never' : 'always'} // nothing is drawn before its shaders are compiled (Clocks)
         shadows="variance"
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         dpr={[1, DPR_MAX]}
